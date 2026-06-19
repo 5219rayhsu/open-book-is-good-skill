@@ -1,0 +1,256 @@
+---
+name: open-book-is-good
+description: 從官方開放試題資料復刻一套考古題自學系統的方法手冊：偵察資料源→下載轉檔→判斷式解析→題庫→裁圖→詳解（含查證紀律）→紅隊抽驗→build 單檔／網站；適用臺灣升學（學測／會考）與國考等公開試題。
+---
+
+# 開卷有益 Open-Book-Is-Good：考古題自學系統復刻手冊
+
+把**官方開放試題資料**長成一套「考古題自學系統」的判斷式復刻手冊。給載入此 skill 的
+AI agent 執行：偵察資料源 → 下載轉檔 → 判斷式解析 → 題庫 → 裁圖 → 詳解（含查證紀律）
+→ 紅隊抽驗 → build 單檔／網站。已在臺灣升學（學測 GSAT／會考 CAP）跑通，方法同樣
+適用國考等其他公開試題。
+
+---
+
+## 何時用這個 skill
+
+- 手上有**官方公布、可自由重製的試題**（依著作權法 §9，見 §9），想把它變成可練習的題庫。
+- 要復刻或擴充「開卷有益」這類考古題自學系統：新增一個科目、一個年度，或一整套新考試
+  （換國家、換考別）。
+- 需要把 PDF 試題轉成結構化題庫、裁出圖式題的圖、生成 clean-room 詳解、打包成離線單檔
+  或網站。
+
+不適用：受著作權保護的商業題本（出版商編排、詳解）；非公開、需授權的試題。
+
+---
+
+## 核心哲學：judgment 式，不是死腳本
+
+這套流程的靈魂是一句話：**先查真實資料再選策略，並內建品質門檻。**
+
+- **judgment 式、不是死腳本**：每一卷的版面、題型、答案鍵格式都不同。解析器要先「偵測
+  這卷的實況」（有沒有題組？幾選一？有沒有多選／非選？答案鍵長怎樣？圖多不多？），
+  再選對應策略 —— 而不是硬套一支萬用腳本。學測較複雜（5 選項、多選、非選、混合題並存，
+  每科結構差很多），會考較單純（全 4 選一單選）。所以幾乎**每科一個 parser**。
+- **內建品質門檻**：judgment 不是隨意，而是把維護者的判斷固化成**每次都遵守、不漂移**
+  的門檻（見 §4）。寧可漏、不可錯：規則分情況（圖片題 vs 文字題、題組 vs 獨立題），
+  不一刀切。
+- **先查實際資料再下判斷**：抓到官方答案後用 `len(answer)` 推題型，比從題幹文字猜可靠；
+  用官方答案表當權威題號清單，過濾掉附錄被誤判的孤立數字。判斷依據是真實資料，不是規格
+  或假設。
+
+---
+
+## 7 phase 流程概覽
+
+```
+偵察 → 下載轉檔 → 判斷式解析 → 題庫 → 裁圖 → 詳解 → 紅隊抽驗 → build
+```
+
+每個 phase 都有對應的 `references/` 深入文件，agent 執行時載入對應檔。
+
+### Phase 1：偵察資料源 → `references/data-sources.md`
+
+找到官方試題與**標準答案**的實際所在。兩個已驗證的資料源模式：
+
+- **伺服器渲染（學測走大考中心 ceec.edu.tw）**：列表頁是靜態 HTML，`curl -A Mozilla`
+  直接抓得到，用 python 正則從 HTML 直取 `file_pool/*.pdf` 連結。**curl + python 優於
+  WebFetch**（WebFetch 會摘要、可能漏改連結）。
+- **JS 渲染（會考走心測中心 cap.rcpet.edu.tw）**：主頁前端渲染，curl 抓不到連結。
+  突破點是 `examination.html` 用 **iframe** 載入靜態頁 `exam/{年}/{年}exam.html`，該頁才
+  列出指向 **Google Drive** 的 file id。整理成 `cap_drive_ids.json`，由 `fetch_cap.py`
+  下載（已處理 Drive 大檔的病毒掃描確認頁、`_is_pdf()` 合法性檢查、冪等跳過）。
+
+碰到新資料源時，第一步永遠是**偵察它的渲染方式**，再決定 curl 直取或走 iframe／API。
+
+> ⚠️ **政府／考試開放資料的檔名、編碼、版面年年漂移，是髒資料。** 抓檔分類**絕不要 exact-match**——
+> ceec 113 數A 的試題檔名少了一個「學」字（`數a` 而非 `數學a`），exact-match 直接漏抓整科整年、還
+> exit 0 不報錯。比對前一律 `unicodedata.normalize('NFKC', s)`、用別名集合寬鬆比對、零筆即 `sys.exit(1)`
+> 別覆蓋好資料。完整原則＋ceec 教學案例＋攝取前自檢清單見 **`references/dirty-data-robustness.md`**，
+> Phase 1～3 都適用。
+
+### Phase 2：下載轉檔 → `references/parsing.md` §1
+
+PDF 先用 **markitdown** 轉 markdown：
+
+```bash
+markitdown data/raw/{年}_{科}_試題.pdf -o data/raw/{年}_{科}_試題.md
+```
+
+markitdown 有版面理解，散文（題幹、題組引文 passage）閱讀序乾淨，這是 raw pymupdf 做不到
+的。**但 markitdown 不是萬靈丹**：多欄並排選項、複雜統計表、特殊版面（會考英語）會翻車，
+這時改用 pymupdf 座標序（`get_text("dict")` 依 `(page, y, x)` 排序）。判斷哪邊可靠正是
+judgment 的一部分。答案 PDF **不轉 md**，走 pymupdf `find_tables()` 直接解析表格。
+
+### Phase 3：判斷式解析 → `references/parsing.md`
+
+先偵測「這卷長怎樣」（§2 的偵測表），再選策略。落實到程式的具體手法：
+
+- **題型由答案推斷**：`len(answer) > 1` → 多選；單字母 → 單選；空且無選項 → 非選。
+- **答案表是權威題號清單**：用它過濾誤判的孤立數字。
+- **題組跨度合理性檢查**：標頭抓到 `(a, b)` 要求 `a <= b`、跨度不過大。
+- **選項殘缺 → fallback**：答案是某字母但只解析到 < 4 選項 → 版面被打碎，改 pymupdf 座標
+  重抓該題。
+
+**每科一個 parser**（`parse_gsat.py`／`parse_eng.py`／`parse_soc.py`／`parse_cap_*.py`），
+共用同一份 schema 與 **qid-keyed 冪等 merge**（重跑某科只覆蓋該科）。逐字忠實：絕不改寫、
+摘要、翻譯；跳過卷首測驗說明；題組 `group_id`／`passage` 綁定、絕不拆散。
+
+### Phase 4：題庫 bank.json → `references/data-sources.md` §5
+
+純文字題庫，每題一物件。核心欄位：`qid`（全域唯一鍵）、`exam`、`year`、`subject`、`no`、
+`group_id`、`passage`、`stem`、`options`、`answer`（可多選）、`type`、`needs_figure`、
+`figure`（**只存檔名**）。**圖只存檔名、永不存影像**，讓題庫可 lint、可 diff、git 可 delta。
+
+### Phase 5：裁圖 → `references/figures.md`
+
+圖式題缺圖等於廢題，所以**裁切原卷版面區塊 render 成 PNG**，忠實重現、不簡化重排。
+
+- **不靠 `page.get_images()`**：地圖／統計圖多為矢量繪製，抓不到內嵌點陣，或會漏掉向量層。
+  改用 pymupdf 整塊 render（raster + vector 一起點陣化，`zoom 2.2`）。
+- **定位題目**：學測用 stem／題組標記的文字前綴（長前綴優先 + 要求唯一）；會考用題號行
+  （左邊界穩定）。題組圖放 passage 區、獨立題圖放題幹後。
+- **band 邊界**：上界留 padding 不過頁眉；下界取下一題起點當硬上限；**圖底保護**
+  （`band_image_bottom`）確保不切半張圖。寬度一律整頁寬單欄（不依文字 x0 切欄，否則
+  「文字左圖右」的並排圖會被切掉）。
+- **保真不壓縮**：不用 pngquant、不降 DPI（地圖失真影響判讀）；只做無損最佳化（如 oxipng）。
+
+腳本：`extract_figures.py`（學測 S/G 命名）、`extract_figures_cap.py`（會考 C 命名），
+皆有 `--dry-run` 先驗 band。
+
+### Phase 6：詳解（含查證紀律） → `references/explanations-redteam.md`
+
+**clean-room 自行生成詳解，絕不抄出版商。** 輸入只有「題幹 + 選項 + 官方標準答案鍵」，
+不把出版商詳解寫法餵進 prompt。每則詳解兩個欄位 `{t, c}`：`t` 是詳解本文，`c` 是把握度
+（`high`／`med`／`low`），讓使用者一眼看出這是「AI 整理」而非權威定論。正本
+`explanations.json` 的 `meta.note` 固定寫明須查證。詳解以 qid 為鍵、冪等 merge
+（`merge_stage3.py` 是唯一寫入者）。
+
+### Phase 7：紅隊抽驗 + build → `references/explanations-redteam.md` §3、`references/build-deploy.md`
+
+- **反駁式紅隊**：用最強模型主動找碴（正解寫反？措辭誤導？事實過時？把握度標太高？），
+  不是覆述。
+- **統計停止規則**：抽樣**真錯**達 `k ≥ 4／40`（Wilson CI 下界 ≥ 4%）才升級該科到更強模型
+  重做；否則續用現模型。動態停，邊抽邊看。
+- **節制門**：只修確認的錯，不為改而改；改完重 lint、重驗。
+- **build**：`build_app.py` 純標準庫、確定性。一場考試一份自足單檔（不出合併版），外加
+  repo 根 `index.html` 索引。圖在此步才 base64 內嵌進 `window.__FIGS__`。前端 ES5、`el()`／
+  `textContent`（杜絕 XSS）、檔 < 800 行。網站版（PWA）走 Service Worker cache-first +
+  圖隨選快取；改 shell 必把 `CACHE` 版號 +1。每次改 build／前端後跑 **preview smoke**
+  （0 console error 才算過）。
+
+完整端到端範例見 `examples/walkthrough.md`（學測社會 111，最難啃的一科）。
+
+---
+
+## 品質門檻（每次都遵守、不漂移）
+
+| 門檻 | 規則 |
+| --- | --- |
+| **紅隊 k ≥ 4／40** | 抽樣真錯達 k≥4、n≈40（Wilson CI 下界 ≥ 4%）才升級該科到更強模型；否則續用。 |
+| **全形 lint** | 中文段落不可混半形標點；CI 一道門（`lint.py` + `lint.yml`）。修正用 CJK 前綴規則（CJK 字後緊接的半形子句標點才轉），**寧可漏轉、不可誤轉**（保住比值 `3:1`、數字後標點）。 |
+| **詳解須查證** | 每則標把握度 `c` + `meta.note` 寫明「AI 整理，非官方標準答案，須查證」。 |
+| **節制門** | 只修確認的錯（判定寫反、事實錯、把握度明顯標錯），不為純措辭改；改完重 lint、重驗，最小變動面。 |
+| **逐字忠實** | 解析絕不改寫／摘要／翻譯；題組絕不拆散；自驗把「忠實」變可檢查條件。 |
+
+---
+
+## 模型路由
+
+依成本守則分三檔，把錢花在真正需要推理的地方，並**避免「便宜生成 → 昂貴查核」的成本倒置**：
+
+| 工作 | 模型檔位 | 例子 |
+| --- | --- | --- |
+| 機械工作 | 小模型（Haiku） | 下載 PDF、markitdown 轉檔、檔案搬移 |
+| 文字科解析／詳解 | 中階（Sonnet） | 國文／英文／社會逐題詳解、選項辨析 |
+| 題組長文／難題／圖式／紅隊 | 最強（Opus） | 閱讀題組長文、爭議難題、看圖判讀、反駁式紅隊查核 |
+
+查核固定用最強模型，但只**抽樣**查（靠統計停止規則決定要不要升級），不逐題重判。升學分支
+實測（國文／英文／社會）：Sonnet 生成 + Opus 抽驗，真錯率遠低於升級門檻，故各科續用 Sonnet。
+
+---
+
+## §9 著作權與 clean-room
+
+### 法律依據：著作權法 §9.1.5
+
+> 依法令舉行之各類考試**試題及其備用試題**，不得為著作權之標的。
+
+因此**官方試題與標準答案可自由重製**，不需授權、不付費。標準答案作為**權威答案鍵**使用。
+
+### clean-room 紀律（受保護的不能碰）
+
+§9 解放的是「試題」本身，**不解放**出版商加值的部分：
+
+- ❌ 不抄出版商的**編排**（分類、難度標註、章節對應、選文導讀）。
+- ❌ 不抄出版商的**詳解**；出版商答案／詳解寫法**不餵進**任何生成 prompt。
+- ✅ 詳解由我們**自行生成**（只看官方試題與官方答案），全標「AI 整理，需查證」並附把握度，
+  經 lint + 紅隊抽驗。
+- ✅ 作文採**官方分級樣卷**（最高分→低分），不 AI 代寫完整作文；英文短答／中譯英近乎有標準
+  答案，可由 AI 整理參考答案並標明須查證。
+
+授權：方法與程式碼（scripts、引擎）採 **MIT**；題目資料依 §9 屬公共所有；作文範本屬官方機關
+依其授權提供。理由（見產物 `docs/DECISIONS.md`）：norms over laws，與其用 copyleft 強制衍生
+開源，不如把 fork／改作／商用的自由給滿，讓「開放比封閉更好用」自己長出規範。
+
+---
+
+## 三層文件（別混為一談）
+
+復刻時要寫三份**對象不同**的文件，剛起步的開源專案最常漏掉第三層：
+
+| 文件 | 對象 | 內容 |
+| --- | --- | --- |
+| **`SKILL.md`（＋ `references/`）** | AI agent | 復刻手冊本體，給 agent 載入執行（即本檔）。 |
+| **skill repo 的 `README.md`** | 逛 GitHub 的人 | 門面：這 skill 是什麼、怎麼裝、怎麼用、授權。 |
+| **產物／專案 `README.md`** | 大眾／貢獻者 | **理念 + 如何貢獻** —— 對社群參與最重要，但最常被漏掉。 |
+
+---
+
+## base64 安全鐵則（最高優先）
+
+把任何 base64 字串塞進對話／終端／工具輸出，會觸發 Anthropic AUP 內容過濾器、kill 掉
+session —— 這是專案鐵則，整套圖架構就是為了讓 base64 全程不進那些通道。
+
+資料流三段、職責清楚（**只描述架構，永不貼任何 base64 內容**）：
+
+```
+原卷 PDF ──extract_figures──► data/figures/{檔名}.png   （獨立二進位 PNG）
+                                      │
+bank.json 只寫 figure="{檔名}.png"     │  （純文字、可 lint、可 git delta）
+                                      ▼
+build_app.py 建置時：PNG ──► base64 ──► 內嵌進 window.__FIGS__（輸出 HTML 內）
+```
+
+鐵則細項（agent／貢獻者務必遵守）：
+
+- **絕不**把任何 base64 字串放進對話、終端輸出、工具參數、Read 結果。
+- 裁圖／批次腳本只 print **計數與大小**（張數／位元組／檔名／座標／缺檔清單）；要看圖就
+  **用 Read 開 PNG 檔**，不 `cat`、不 `head`、不把 bytes 餵進 prompt。
+- `bank.json`／staging JSON 只存**檔名**；base64 只活在 `build_app.py` 的 `figures_block()`
+  內部與最終 HTML。
+- `js_safe_json()` 把資料裡的 `</` 轉成 `<\/`，避免內容裡萬一出現 `</script>` 提早關閉標籤。
+
+---
+
+## 範圍是對象決策，不是技術決策
+
+收哪些年度／課綱／考別，由**維護者依服務對象拍板**（升學分支：只收新課綱 111–115）。換對象
+（收舊課綱、另一國家的考試）時自行調整收錄範圍，其餘流程（偵察→下載→解析→題庫→裁圖→
+詳解→build）不變。學測與會考同平台、考試選擇器切換、**預設不跨考混題**；國考各自獨立。
+
+---
+
+## references 索引
+
+| 檔 | 主題 |
+| --- | --- |
+| `references/data-sources.md` | 資料源偵察、下載、著作權 §9、clean-room、bank.json schema |
+| `references/parsing.md` | judgment 式解析、markitdown vs pymupdf、每科 parser、冪等 merge、自驗 |
+| `references/figures.md` | 裁圖（整塊 render）、定位、band 邊界、base64 安全架構、保真 |
+| `references/explanations-redteam.md` | clean-room 詳解、模型路由、反駁式紅隊、Wilson 停止規則、節制門、lint、作文政策 |
+| `references/build-deploy.md` | build 單檔／網站、PWA／Service Worker、體積永續、產物層收斂決策 |
+| `references/dirty-data-robustness.md` | 政府／考試開放資料的命名／編碼／版面髒點：NFKC 正規化、寬鬆匹配、零筆即報、不吞錯、原子寫入；含 ceec「數a 少學字」教學案例＋攝取前自檢清單 |
+| `examples/walkthrough.md` | 端到端範例：學測社會 111（最難啃的一科） |
+| `examples/sample-output/` | 真實產出切片：學測社會 111 題組（passage＋小題＋圖＋詳解 JSON），看管線跑完長什麼樣 |
+| `scripts/` | 各 phase 的參考實作（model 腳本：scrape／parse／裁圖／merge／build）；judgment 式、需依自身資料調整，見 `scripts/README.md` |
