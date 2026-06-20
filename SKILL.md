@@ -237,7 +237,13 @@ build_app.py 建置時：PNG ──► base64 ──► 內嵌進 window.__FIGS_
 
 收哪些年度／課綱／考別，由**維護者依服務對象拍板**（升學分支：只收新課綱 111–115）。換對象
 （收舊課綱、另一國家的考試）時自行調整收錄範圍，其餘流程（偵察→下載→解析→題庫→裁圖→
-詳解→build）不變。學測與會考同平台、考試選擇器切換、**預設不跨考混題**；國考各自獨立。
+詳解→build）不變。學測與會考同平台、考試選擇器切換、**預設不跨考混題**；國考各考試對使用者
+各自獨立呈現。
+
+**但國考端有「共用槓桿」**：不同考試常共用基礎科目（如臨床／諮商心理師共用變態心理學、
+心理衡鑑等）。**開一套新考試前先做「科目重疊矩陣」**，共用科目**建一次、用 `exams` 陣列標
+歸屬、題庫層去重**（同一份官方卷才併），省工又保證兩考試一致 —— 見
+`references/shared-question-banks.md`。
 
 ---
 
@@ -251,6 +257,7 @@ build_app.py 建置時：PNG ──► base64 ──► 內嵌進 window.__FIGS_
 | `references/explanations-redteam.md` | clean-room 詳解、模型路由、反駁式紅隊、Wilson 停止規則、節制門、lint、作文政策 |
 | `references/build-deploy.md` | build 單檔／網站、PWA／Service Worker、體積永續、產物層收斂決策 |
 | `references/dirty-data-robustness.md` | 政府／考試開放資料的命名／編碼／版面髒點：NFKC 正規化、寬鬆匹配、零筆即報、不吞錯、原子寫入；含 ceec「數a 少學字」教學案例＋攝取前自檢清單 |
+| `references/shared-question-banks.md` | 跨考試共用題庫（國考用）：科目重疊矩陣、共用科目建一次、`exams` 陣列多考試標記、同一份官方卷才併的去重紀律 |
 | `examples/walkthrough.md` | 端到端範例：學測社會 111（最難啃的一科） |
 | `examples/sample-output/` | 真實產出切片：學測社會 111 題組（passage＋小題＋圖＋詳解 JSON），看管線跑完長什麼樣 |
 | `scripts/` | 各 phase 的參考實作（model 腳本：scrape／parse／裁圖／merge／build）；judgment 式、需依自身資料調整，見 `scripts/README.md` |
