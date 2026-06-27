@@ -1,5 +1,7 @@
 # 圖式科：裁圖內嵌 + base64 安全架構
 
+> **裁圖/圖表抽取的「主」參考＝ `exam-pdf-asset-extractor` skill**（圖表是它的專責：像素 autocrop＋裁切偵測、image/text 雙錨點開關、image-table text-pair 錨點、跨頁、Completeness Re-check 掃全題型）。新裁圖工作先讀那支。本檔只留 **open-book 專屬建置面**：離線單檔（學測／會考）的 base64 內嵌架構；**國考是線上站 → 圖存 PNG 不做 base64**（見主 skill）。
+>
 > 適用範圍：社會圖表題、英文圖選項題、國文／社會題組共用材料圖，以及未來的數學／自然圖式科。
 > 對應腳本：`scripts/extract_figures.py`（學測）、`scripts/extract_figures_cap.py`（會考）、`scripts/build_app.py`（建置內嵌）。
 > 授權：MIT。

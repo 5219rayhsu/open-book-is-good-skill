@@ -245,3 +245,25 @@ build_app.py 建置時：PNG ──► base64 ──► 內嵌進 window.__FIGS_
 模型路由：抓資料／轉檔等機械工作用較小模型；文字科解析與詳解用中階模型；題組長文、
 難題、圖式、紅隊查核用最強模型。詳解抽驗採統計規則：抽樣錯誤達 k≥4/40
 （錯誤率下界 ≥4%）才升級到更強模型重做。
+
+---
+
+## 8. 國考（考選部）：MCP 拿題 + 官方 PDF 拿答案（雙來源）
+
+國考（高普考／律師／司法官／會計師／醫師／教師等）有別於學測會考——題量極大（考選部
+dataset 170565：64,815 卷、320,663 題、2000 至今），且**有現成的開放資料 MCP 鏡像**
+（Twinkle Hub 的 exam corpus）。但**答案不在 MCP 裡**，仍要回官方 PDF。雙來源分工：
+
+| 要拿什麼 | 來源 | 工具／做法 |
+|---|---|---|
+| 整卷題目 | Twinkle Hub MCP | `get_exam_paper(paper_id)` 回整卷題幹＋選項 |
+| **跨年挑特定主題題目** | Twinkle Hub MCP | `search_exam_questions(query, stem_contains=, exam_type=, subject=, year_from=)` — 題目層級語意檢索，建新題庫挑題很方便 |
+| **選擇題標準答案** | **官方 PDF（非 MCP）** | curl 考選部「測驗式試題標準答案」PDF → `pdftotext` / `pymupdf find_tables()` 解出題號→正解 |
+| 申論參考解 | 無官方解 | 自行 AI 生成＋紅隊（見 explanations-redteam.md） |
+
+**關鍵坑（實測）**：MCP 的語意向量**只 embed 題幹，選項與答案不入索引**，所以
+①「找答案提到 XX 的題」搜不到 ②MCP **完全沒有答案欄位**——別期待 MCP 給標準答案。
+答案唯一權威仍是官方 PDF（同 §0 原則）。所以國考管線＝**MCP 拿題（語意搜尋挑題更靈活）
+＋ 官方 PDF 拿答案（逐題全驗）**，兩來源獨立、可交叉對照，不單押一個來源。
+
+> 載入對應的 `tw-opendata-exam` skill 可取得這三個 MCP tool 的完整簽名與 query 範例。
