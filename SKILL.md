@@ -317,7 +317,7 @@ build_app.py 建置時：PNG ──► base64 ──► 內嵌進 window.__FIGS_
 | `references/data-sources.md` | 資料源偵察、下載、著作權 §9、clean-room、bank.json schema |
 | `references/parsing.md` | judgment 式解析、markitdown vs pymupdf、每科 parser、冪等 merge、自驗 |
 | `references/figures.md` | 裁圖（整塊 render）、定位、band 邊界、base64 安全架構、保真 |
-| `references/explanations-redteam.md` | clean-room 詳解、三段固定結構＋合併解析規則、品質拉齊五機制、模型路由、反駁式紅隊、Wilson 停止規則、節制門、lint、作文政策 |
+| `references/explanations-redteam.md` | clean-room 詳解、三段固定結構＋合併解析規則、品質拉齊五機制、pipeline token 工程（大批量「省 token＝升品質」七槓桿）、模型路由、反駁式紅隊、Wilson 停止規則、節制門、lint、作文政策 |
 | `references/build-deploy.md` | build 單檔／網站、PWA／Service Worker、體積永續、產物層收斂決策 |
 | `references/dirty-data-robustness.md` | 政府／考試開放資料的命名／編碼／版面髒點：NFKC 正規化、寬鬆匹配、零筆即報、不吞錯、原子寫入、官方 PDF 文字層 ToUnicode 塌縮的偵測與 vision 復原硬門；含 ceec「數a 少學字」教學案例＋攝取前自檢清單 |
 | `references/shared-question-banks.md` | 跨考試共用題庫（國考用）：科目重疊矩陣、共用科目建一次、`exams` 陣列多考試標記、同一份官方卷才併的去重紀律、混卷模擬考內容指紋去重、跨年孿生題不可 stem-only 去重 |
