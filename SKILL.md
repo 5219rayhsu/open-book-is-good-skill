@@ -324,4 +324,7 @@ build_app.py 建置時：PNG ──► base64 ──► 內嵌進 window.__FIGS_
 | `references/frontend-engine-rules.md` | 前端作答引擎：題組／承上題情境引入規則（各作答表面分工）、出題演算法（弱項加權、指紋冷卻、回鍋複習）、標記與儲存的職責分工 |
 | `examples/walkthrough.md` | 端到端範例：學測社會 111（最難啃的一科） |
 | `examples/sample-output/` | 真實產出切片：學測社會 111 題組（passage＋小題＋圖＋詳解 JSON），看管線跑完長什麼樣 |
+| `examples/pipeline-templates.md` | 管線範本示範：操作卡、金樣詳解、錨定素材包各一則，示範生成前綴各環節產物長什麼樣 |
+| `docs/adr/` | 方法論決策紀錄（ADR）：詳解結構、重構策略、token 工程、模型分層、紅隊抽樣、三層防錯的「為什麼這樣做」；改方法論規則前先讀對應 ADR |
+| `CONTRIBUTING.md` | 如何參與、三層授權（MIT／著作權法 §9／CC0）、全形標點規範、改方法論前先讀 ADR |
 | `scripts/` | 各 phase 的參考實作（model 腳本：scrape／parse／裁圖／merge／build）；judgment 式、需依自身資料調整，見 `scripts/README.md` |
