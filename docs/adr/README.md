@@ -28,6 +28,9 @@ Decision Records）。每一篇記一個影響整套管線的技術取捨：為�
 | [0006](0006-model-tier-criteria-and-no-downgrade-list.md) | 模型分層三級判準＋不降清單 | 哪個環節該用哪級模型、哪些鎖死不降 |
 | [0007](0007-default-full-redteam-sampling.md) | 紅隊預設全抽、降抽要掙 | 正確性＞成本的價值排序 |
 | [0008](0008-three-layer-error-defense.md) | 三層防錯分工＋金樣先過紅隊 | lint／錨定／紅隊各司其職、範本先自清 |
+| [0009](0009-distractor-misconception-clause.md) | 概念型誘答的「為什麼它看起來對」硬性條款 | 辨析要打到迷思，不只判對錯 |
+| [0010](0010-cue-sentence-operational-keypoints.md) | 題眼句與判準式考點 | 首段點出觸發知識點、末段給可操作判準 |
+| [0011](0011-eliminate-tool-round-trips.md) | 消除工具往返（第八槓桿）＋批次大小算式 | 模型不碰檔案系統（實測降 1/2.9）；`N ≥ 4P/d` 但**錯配不可偵測則 N=1** |
 
 ## 格式
 

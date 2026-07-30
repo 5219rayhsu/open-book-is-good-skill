@@ -322,6 +322,7 @@ build_app.py 建置時：PNG ──► base64 ──► 內嵌進 window.__FIGS_
 | `references/dirty-data-robustness.md` | 政府／考試開放資料的命名／編碼／版面髒點：NFKC 正規化、寬鬆匹配、零筆即報、不吞錯、原子寫入、官方 PDF 文字層 ToUnicode 塌縮的偵測與 vision 復原硬門；含 ceec「數a 少學字」教學案例＋攝取前自檢清單 |
 | `references/shared-question-banks.md` | 跨考試共用題庫（國考用）：科目重疊矩陣、共用科目建一次、`exams` 陣列多考試標記、同一份官方卷才併的去重紀律、混卷模擬考內容指紋去重、跨年孿生題不可 stem-only 去重 |
 | `references/frontend-engine-rules.md` | 前端作答引擎：題組／承上題情境引入規則（各作答表面分工）、出題演算法（弱項加權、指紋冷卻、回鍋複習）、標記與儲存的職責分工 |
+| `references/batching-and-measurement.md` | **第八槓桿：消除工具往返**（模型不碰檔案系統，實測降為 1/2.9）、`--output-schema` 的 required 坑、批次大小 `N ≥ 4P/d` 算式＋兩個上限（重試波及範圍、**逐題錯配不可偵測則 N=1**）、token 量測紀律（只報總量故須改一個變數、`n ≥ 12–15`、用中位數） |
 | `examples/walkthrough.md` | 端到端範例：學測社會 111（最難啃的一科） |
 | `examples/sample-output/` | 真實產出切片：學測社會 111 題組（passage＋小題＋圖＋詳解 JSON），看管線跑完長什麼樣 |
 | `examples/pipeline-templates.md` | 管線範本示範：操作卡、金樣詳解、錨定素材包各一則，示範生成前綴各環節產物長什麼樣 |

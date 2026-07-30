@@ -309,6 +309,10 @@ merge 時一併做兩件正規化：
 - 來源 `data/_stage/cap_{科}.json`，**只取通過查驗的科目**。
 - **文字題**（`needs_figure == False`）每 **20** 題一檔：`capq_text_{i}.json`。
 - **圖題**（`needs_figure == True`）每 **12** 題一檔：`capq_fig_{i}.json`（圖題批次小一點，因為單題上下文重）。
+  ⚠️ **這個 12 只適用於「多題共用一圖、可整批對照」的情形。一題一圖的科目必須改成 1 題一檔**——
+  圖↔題錯配（把第 3 題的圖寫進第 5 題）會通過結構 lint、通過答案錨、而文字紅隊被明文禁止提圖類
+  finding，等於一則格式合規、答案正確、圖像描述張冠李戴的詳解直接上線。
+  判準與算式見 [`batching-and-measurement.md`](batching-and-measurement.md) §2、ADR-0011。
 - 每檔是題物件陣列，欄位對齊既有 `q_text_*`／`q_fig_*` 格式：
   `qid, subject, year, no, stem, options, answer, passage, needs_figure, figure`。
 - **冪等**：每次重建會先 `clear_old` 清掉舊 `capq_text_*`／`capq_fig_*` 再重切；排序鍵為 `(subject, year, no)`。
