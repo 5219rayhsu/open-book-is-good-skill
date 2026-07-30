@@ -31,6 +31,7 @@ Decision Records）。每一篇記一個影響整套管線的技術取捨：為�
 | [0009](0009-distractor-misconception-clause.md) | 概念型誘答的「為什麼它看起來對」硬性條款 | 辨析要打到迷思，不只判對錯 |
 | [0010](0010-cue-sentence-operational-keypoints.md) | 題眼句與判準式考點 | 首段點出觸發知識點、末段給可操作判準 |
 | [0011](0011-eliminate-tool-round-trips.md) | 消除工具往返（第八槓桿）＋批次大小算式 | 模型不碰檔案系統（實測降 1/2.9）；`N ≥ 4P/d` 但**錯配不可偵測則 N=1** |
+| [0012](0012-reviewer-input-parity.md) | 審查者輸入等價 | 上下文可見性改為宣告式、機器強制、發包前驗證；擋掉「看不到＝內容錯」的誤報鏈 |
 
 ## 格式
 
