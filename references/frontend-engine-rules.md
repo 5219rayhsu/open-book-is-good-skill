@@ -117,6 +117,34 @@
 含 `\(`，所以它是個潛伏缺陷而不是全站災難；但同一天要新寫的多項式長除法詳解大量用到式子，
 不修就會馬上壞掉。**「只影響 1 筆」是修的理由（便宜），不是不修的理由。**
 
+### 4.1 第五次：主題 class 也是橫切，而且「CSS 預設值的方向」決定它壞成什麼樣（2026-07-30）
+
+症狀：點進科目時**先閃一秒暖色底、才切回白底**。使用者的猜測是「載入時沒有改掉，只是改成指向白底」——
+方向剛好相反，但直覺抓對了關鍵：**問題不在顏色值，在掛 class 的時機。**
+
+機制：`app.css` 的 `:root --paper` 是暖紙、`html{background:var(--paper)}`，
+所以**暖紙是 CSS 預設值**；白底是 `html.theme-light` 事後覆蓋 token 出來的。
+`theme-boot.js` 檔頭早就寫明「必須以非 defer 在 `<head>` 載入才能首繪前掛 class、零閃爍」，
+封面與 998 個靜態科目頁都照做了——**只有 `web/index.html`（真正的引擎頁、使用者待最久的那一頁）漏掛**，
+主題只剩 `settings.js`（defer）的 `initSettingsPrefs()` 收尾。實測資源時序：
+`theme-boot.js` 16ms 完成 vs `settings.js` 45ms——那 30ms（線上更久）就是那道暖色閃光。
+
+兩條可帶走的規則：
+
+1. **主題／字級這類「掛在 `<html>` 的 class」是橫切關切，和 LaTeX 渲染同一類**，新增任何 HTML 入口
+   都要掛。判斷「有幾個入口」的零成本方法：`rg -l 'app\.css' --glob '*.html'` 的檔數。
+2. 🔴 **設計 token 主題時，讓「多數人會看到的那個主題」當 CSS 預設值，別當 class 覆蓋。**
+   本站預設偏好是白底、CSS 預設值卻是暖紙，於是漏掛的懲罰＝**每個使用者每次進頁都閃**。
+   若方向相反（白底當預設、暖紙才加 class），同一個漏掛只會讓少數選暖紙的人稍晚變色，
+   幾乎不會被發現——**同一個 bug，嚴重度差一個數量級，差別只在你把哪個值放在 `:root`。**
+
+修法與防線：`web/index.html` 補一行非 defer 的 `<script src="theme-boot.js"></script>`（一行，
+共用同一支、同一把鑰匙 `obig:theme`），並在 `publish_platform.sh` 加 `theme_boot_gate`——
+掃所有引用 `app.css` 的 `*.html`，缺 `theme-boot.js`（含誤加 `defer`）即 fail-closed 擋發佈，
+selftest 三個 canary 雙向驗證（漏掛要擋／defer 要擋／掛好要放）。
+**這條的重點是最後這步：把「每個入口都要掛」寫進閘門，不是寫進註解**——§4 已經證明註解擋不住第五次。
+實證力道：那道 gate 上線後對著 git HEAD 跑，自己就把這一頁點名出來了。
+
 ## 5. 本機 preview 驗證：Service Worker 會餵你舊檔（2026-07，踩了四次）
 
 站上有 PWA 的 `sw.js`。在 `python3 -m http.server` 上驗證前端改動時，**改完 JS 重新整理，
