@@ -309,3 +309,26 @@ wait
 
 新寫的判定式要先在 **known-good 與 known-bad 兩種狀態各跑一次**，確認它不會恆真。
 `run_stage.sh --selftest` 就是這件事：起 9 個假工作、記 S/E 事件、算最大同時數，超過 `PAR` 就非零退出。
+
+## 9. 跑批進行中讀產出檔：旁觀者必須容忍半截檔（2026-08-01）
+
+跑批期間想提早驗格式（見 `explanations-redteam.md` §12），就得掃 `*_out_p*.json`——
+會撞上**正在落盤的那一兩個檔**，`json.load` 丟 `Invalid control character`。
+
+同一批檔案，讀取者的時序不同、安全性就不同：
+
+| 讀取者 | 何時讀 | 會不會撞半截檔 |
+| --- | --- | --- |
+| `run_stage.sh` 的冪等判斷 | 啟動第 i 塊**之前**讀第 i 塊 | ❌ 不會——那時沒人在寫它 |
+| 預檢／彙整／統計腳本 | 全場都在寫時掃**全部**檔案 | ✅ 一定會 |
+
+所以旁觀型腳本一律 `try/except: continue`，**不要**因為一個半截檔就整個崩掉：
+
+```python
+try:
+    recs = json.loads(p.read_text("utf-8"))
+except Exception:
+    skipped += 1; continue   # 正在落盤，下次再讀
+```
+
+並且**把 skipped 數印出來**——靜默跳過會讓「掃到 300 則」看起來像「總共只有 300 則」。
