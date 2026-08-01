@@ -16,6 +16,8 @@
 | `extract_figures_cap.py` | 5 裁圖 | 會考版裁圖（科別簡碼）。 |
 | `merge_cap_to_bank.py` | 4 題庫 | 冪等 upsert 進 bank.json（qid 為鍵、備份、驗 JSON、查重）。 |
 | `merge_expl_to_main.py` | 6 詳解 | 把分批生成的詳解併回 explanations.json。 |
+| `anchor_pack.py` | 6 詳解 | 法規科的錨定素材包：`--build` 抓官方現行條文全文＋版本戳記、`--check` 比對異動日期當波次啟動閘、`--verify` 零 token 掃詳解的法條引用（`fail`／`historical`／`flag` 三類）。見 `references/explanations-redteam.md`。憑證與 IPv6 繞道見 `references/dirty-data-robustness.md` §5。 |
+| `law_impact.py` | 6 詳解 | 月維護：比對修法前後的素材包，列出引用到異動條號的**已上線**詳解 qid。 |
 | `build_app.py` | 7 build | 把題庫＋圖＋前端打包成單檔 HTML（base64 只在 build 期內嵌，絕不進對話／stdout）。 |
 
 其餘未收錄的腳本（各科 parser、整題 render、答案鍵解析、題庫拆小檔＋schema＋CI 等）

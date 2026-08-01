@@ -30,6 +30,23 @@
    - `curl -I <url>` 通、程式不通：**多半**是程式端 CA 設定／certifi 過舊，但也可能是該站的 root 只在 Keychain 受信任、certifi 沒收錄（常見於企業或本機自簽 CA）。先 `pip install -U certifi` 或把該 root 餵給 `verify=` 再判斷。
    - `curl` 也不通：問題在站臺憑證本身，不是你的程式。
 
+   **第三種模式：憑證欄位不合規（換 CA bundle 沒用），且它常跟另一個故障疊在一起。**
+   2026-08-01 抓全國法規資料庫（`law.moj.gov.tw`）實測：Python 對 45 部法全滅，錯誤是
+   `CERTIFICATE_VERIFY_FAILED: Missing Subject Key Identifier`——該站憑證缺 SKI 欄位，
+   OpenSSL 3 嚴格拒收，macOS Keychain 卻接受。這不是 CA bundle 過舊，換 certifi 無效。
+   同時 `curl` 也逾時，照上一條會判成「站臺憑證問題」而放棄——但真正的原因是**該站
+   AAAA 位址無回應**，curl 預設偏好 IPv6 就卡在那裡；`curl -4` 一下就 200。
+   兩點通則：
+   - **憑證錯 ≠ 連不上**。`CERTIFICATE_VERIFY_FAILED` 代表 TLS 握手已經走到驗證階段，
+     也就是**連得到**；真正的連線故障是 timeout／DNS 失敗。把兩者混為一談就會誤判
+     「站掛了／資料不存在」——這與 §「缺檔先疑命名變體」是同一種錯：拿環境問題當資料結論。
+   - **繞道要挑最小的那個**。這裡的解法是傳輸層換成 `curl -4` ＋瀏覽器 UA、Python 端保留
+     為後備，**不加 `-k`**——系統信任鏈本來就接受該憑證，驗證維持開啟。`-k` 是把整條
+     信任鏈關掉來換一個欄位的相容性，代價與收益完全不成比例。
+   - 把繞道的理由寫成註解＋自我測試釘住（「走 IPv4」「不關驗證」「有逾時上限」三條
+     assert），否則下一個人會以為 `-4` 是隨手加的而拿掉。參考實作見
+     [`../scripts/anchor_pack.py`](../scripts/anchor_pack.py) 的 `curlArgv`／`fetchHtml`。
+
 6. **寫檔要原子化，並先備份。**
    `open(path, 'w')` / `write_text()` 是「先清空再寫」，寫到一半被 kill（磁碟滿、Ctrl-C、重啟）就留下半截或 0-byte 的損毀檔。做法：
    - 先寫同目錄下的暫存檔（`path.with_suffix('.tmp')`），驗證通過後 `os.replace(tmp, path)`。`os.replace` 只在**同一檔案系統內**才原子；tmp 與目標跨掛載點（如 tmp 在 `/tmp`、目標在 `/Users`）會丟 `OSError: EXDEV`，所以暫存檔務必放在目標的同一目錄。
