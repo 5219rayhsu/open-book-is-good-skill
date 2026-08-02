@@ -191,10 +191,10 @@ python3 scripts/build_app.py
 > **判準：發佈只要求「不比現況壞」，不要求「全部完美」。**
 > 把「沒改到的」與「改壞的」分開算，否則永遠不敢按下發佈。
 
-## `.gitignore` 的 `*.bak*` 擋不到**目錄名**（2026-08-02，`.git` 93MB → 487M）
+## `.gitignore` 的 `*.bak*` 擋不到**目錄名**（2026-08-02）
 
-`figures_pre_recrop_bak/` 底下 670 個衍生 PNG 被 track 了一個月，
-`.git` 一個月漲 5.2 倍。`*.bak*` 是檔名樣式，對目錄無效。
+`figures_pre_recrop_bak/` 底下 670 個衍生 PNG 被 track 了一個月。
+`*.bak*` 是**檔名**樣式，對目錄無效：
 
 ```gitignore
 *_bak/
@@ -203,7 +203,43 @@ data/*/raw/
 ```
 
 止血：`git rm -r --cached <目錄>`（**工作樹檔案保留**，跑完務必數一次實體檔還在）。
-⚠️ **這只止住未來成長，不縮既有歷史**——要縮得改寫歷史，是另一件破壞性的事。
+根治是「衍生圖不進 repo，部署時重生」——source 是 PDF ＋ 偵測程式 ＋ 少量手修的
+`overrides/`。**別用 Git LFS**（把問題換個地方付錢）。
 
-**根治**：衍生圖不是 source。source 是 PDF ＋ 偵測程式 ＋ 少量手修的 `overrides/`，
-部署時重生。**別用 Git LFS**（把問題換個地方付錢）。
+### 🔴 但別把這件事當成 `.git` 變肥的原因——我就這樣誤判了一次
+
+同一輪我看到 `du -sh .git` = 487M（一個月前 93MB），又看到 670 個 PNG 被 track，
+就把兩者接成因果寫進 commit message 與工單。**兩個事實都對，因果是我補的，沒量佔比。**
+
+量完之後：
+
+```
+.git 487M 的組成         歷史 blob 佔比（全部 1,111 MB）
+  177M  packed            data/social-worker/   185.8 MB / 30 blob
+  310M  鬆散物件 3,696 個   data/doctor/figures/  123.2 MB / 419 blob
+                          *_bak/ ＋ raw/         10.4 MB ← 只有 1%
+```
+
+**真正的大宗是資料檔反覆 commit**：`bank.json`／`explanations.json` 每改一次就是
+一份幾 MB 的新快照，30 次就是 180MB。那是大型題庫專案的正常成本，不是缺陷。
+
+### 先跑 `git gc`，再談要不要改寫歷史
+
+`git gc` 把鬆散物件收進 packfile 並做差分壓縮，**不動任何 commit、SHA 全不變、
+不需要 force push**。實測三個 repo：
+
+| repo | gc 前 | gc 後 |
+| --- | ---: | ---: |
+| 開發用（含全部歷史） | 487M | **287M** |
+| 發佈用（rsync 產生，**從未 pack 過**） | 351M | **241M** |
+| skill | 3.0M | **788K** |
+
+> **判準：`du -sh .git` 這個數字本身會誤導**——它把「還沒整理的暫存」與「永久歷史」
+> 加在一起。要判斷 repo 是不是真的臃腫，看 `git count-objects -vH` 的 **`size-pack`**，
+> 不是資料夾大小。用 `du` 的數字去下「需要改寫歷史」的結論，等於拿沒對焦的尺量東西。
+
+特別注意 **rsync 產生的發佈用 repo 幾乎一定沒 pack 過**（沒人在那裡跑過會觸發
+auto-gc 的日常操作），往往是三個 repo 裡最肥的那個。
+
+**歷史改寫（`filter-repo`／BFG）是最後手段**：所有 commit SHA 全變、必須 force push、
+別人手上的 clone 全部作廢。先量 `size-pack`、先 `gc`，剩下的量級若仍不可接受再談。
