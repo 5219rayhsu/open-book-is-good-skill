@@ -410,3 +410,25 @@ PROSE = "，。；：？！「」『』（）、…—"   # 中文散文標點�
 順帶：**發佈前的不變式檢查要能區分「本次引入」與「早就在線上」**。
 `git show HEAD:<path>` 拿線上版跑同一支檢查——若缺陷兩邊都有，就不該擋這次發佈
 （擋了等於用一個舊缺陷扣住一批已驗證的改善）。
+
+### 🔴 驗前端改動前先殺快取——這站有 service worker
+
+改完 `web/run.js` 後在 preview 驗證，量到的是**舊碼的行為**（表頭渲染成「每列一格、
+內容是逗號串」）。原因是 `sw.js` 的 cache 還活著，`?cb=` 查詢字串繞不過它。
+
+```js
+const regs = await navigator.serviceWorker.getRegistrations();
+await Promise.all(regs.map(r => r.unregister()));
+const keys = await caches.keys();                 // 實測 obig-shell-v26 / obig-data-v26
+await Promise.all(keys.map(k => caches.delete(k)));
+```
+
+清完再導頁。**先驗「載到的真的是新碼」再驗行為**：
+
+```js
+(await (await fetch('/web/run.js?cb=' + Date.now())).text()).includes('colSpan += 1')
+```
+
+這次的意外收穫是那份快取剛好成了 **known-bad 對照**——同一段驗證程式在舊碼下的
+輸出長什麼樣，直接看到了。但那是運氣，不是方法：正常做法是先清快取、
+確認載到新碼，需要對照時再自己切回舊行為量一次。

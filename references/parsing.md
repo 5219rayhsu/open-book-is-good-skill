@@ -812,3 +812,39 @@ def walk(o, path):
 所以看到 `table` 裡有造字時，**不要只換那個字元**——先把整格拿去跟原卷對照，
 上下標多半也壞了。修法是重建整格文字，用 Unicode 上下標字元（`₄` `⁻⁶` `²⁺`），
 不是塞 `<sub>`（該欄位是純字串，前端直接渲染進 `<table>`）。
+
+### 🔴 §16 「把第一列移進表頭」這種轉換天生不冪等——而且題數斷言看不到
+
+修表格時寫了 `rows[1:]`（把被壓下來的第二層表頭移進 `headers`）。`--write` 跑了
+兩次，第二次把**真正的第一筆資料吃掉**，表格從 6 筆變 5 筆。
+
+三件事讓它溜過去：
+
+1. **自檢只測「乾淨輸入跑一次」**，沒測跑兩次。
+2. **`assert len(qs) == n_before`（題數不變）通過了**——它數的是題，不是表格列。
+   **斷言蓋不到會壞的維度時，它的通過是零資訊。**
+3. 兩次 `--write` 都印「✅ 改 7 題、筆數 1258 不變」，訊息一模一樣。
+
+抓到它的是**截圖**：畫面上資料列從「1」開始變成從「2」開始。
+
+判準：**任何「移除／搬移某一列」的修復，都要用資料本身的形狀判斷該不該做，
+不能靠「跑過沒」這種外部狀態**；並且自檢必收 `f(f(x)) == f(x)`：
+
+```python
+def is_pushed_down_header(row):     # 形狀判準，不是狀態旗標
+    return bool(row) and not str(row[0]).strip() and any("ZnSO" in str(c) for c in row)
+
+assert fix(got) == got, "不冪等——重跑會流失資料"
+assert is_pushed_down_header(["", "ZnSO 4 …"])      # known-bad
+assert not is_pushed_down_header(["1", "200", "50"]) # known-good
+```
+
+### §17 同一份資料有兩套渲染器，改一邊不算改完
+
+`q.table` 由**兩處**畫成 HTML：作答引擎 `web/run.js` 的 `buildTable()`（執行期），
+與靜態 SEO 頁 `_build_features/gen_deep_pages.py` 的 `render_table()`（建置期，
+烤進 `exam/**/index.html`）。只改前者，靜態頁還是舊的；而且**改完資料還要重跑
+`gen_static_pages.py`**，否則靜態頁停留在舊 JSON。
+
+順帶：重生成會一併追平**其他 session 已提交但還沒生成靜態頁**的資料改動
+（實測一次補了 657 檔，多數是別人的詳解文案）。commit 訊息要講明，否則看起來像自己改的。
