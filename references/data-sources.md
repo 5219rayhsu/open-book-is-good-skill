@@ -239,7 +239,7 @@ build_app.py 建置時：PNG ──► base64 ──► 內嵌進 window.__FIGS_
 | 答案鍵 | 標準答案 PDF `find_tables()` → 題號→正解 | 參考答案 PDF（多科一覽表）定位各科欄 |
 | 題庫   | merge 進 `bank.json`（qid-keyed 冪等） | 同左 |
 | 裁圖   | `extract_figures.py`（S/G 命名）       | `extract_figures_cap.py`（C 命名） |
-| 詳解   | Sonnet 生成 → Opus 抽驗（k≥4/40 升級） | 同左 |
+| 詳解   | 生成 → 抽驗升級（k≥4/40）；**模型配置見 SKILL.md §模型路由，該處標了日期與保鮮期** | 同左 |
 | 打包   | `build_app.py` → 單檔 HTML（圖 base64 內嵌） | 同左 |
 
 模型路由：抓資料／轉檔等機械工作用較小模型；文字科解析與詳解用中階模型；題組長文、
