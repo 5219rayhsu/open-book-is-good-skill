@@ -19,6 +19,7 @@
 | `anchor_pack.py` | 6 詳解 | 法規科的錨定素材包：`--build` 抓官方現行條文全文＋版本戳記、`--check` 比對異動日期當波次啟動閘、`--verify` 零 token 掃詳解的法條引用（`fail`／`historical`／`flag` 三類）。見 `references/explanations-redteam.md`。憑證與 IPv6 繞道見 `references/dirty-data-robustness.md` §5。 |
 | `law_impact.py` | 6 詳解 | 月維護：比對修法前後的素材包，列出引用到異動條號的**已上線**詳解 qid。 |
 | `build_app.py` | 7 build | 把題庫＋圖＋前端打包成單檔 HTML（base64 只在 build 期內嵌，絕不進對話／stdout）。 |
+| `arm_parity.py` | 跨階段 | **實驗臂等價登記簿**：跨模型／跨供應商比較時，啟動端 `record()` 記下真正送出去那串字的雜湊，判分器 `assert_parity()` 不一致就拋錯、**查無紀錄＝失敗**。純標準庫、自帶六方向自檢。見 `references/batching-and-measurement.md` §15。 |
 
 其餘未收錄的腳本（各科 parser、整題 render、答案鍵解析、題庫拆小檔＋schema＋CI 等）
 同屬這條管線；需要時依同樣 judgment 原則撰寫。授權 MIT。
