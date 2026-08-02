@@ -675,3 +675,35 @@ agent 派發的臂有一個 CLI 臂沒有的結構性缺口：工具的 prompt �
 `premerge_gates`、發佈閘、`arm_parity` 三者都成功，共同點是**閘門放在「想要產物就繞不開
 的那一步」，不放在「需要自律的那一步」**。啟動端需要紀律（會忘）；判分器是你想要數字
 就一定得跑的那步。散文規則的失效模式是「要生效得先被想起」——這三層裡沒有一層依賴想起。
+
+## 18. 多 session 下改 repo 名：push 會被重新導向到你不預期的地方（2026-08-02）
+
+GitHub 改名後**舊 URL 會自動重新導向到新位置**，git push／fetch 都吃這個導向。
+平常那是好事；**兩個 repo 交換名字的那幾秒鐘，它會把 push 送到錯的 repo。**
+
+實測順序：
+
+```
+21:50  我把資料 repo 併進工具 repo
+22:0x  我 rename A → A-frozen，再 rename B → A     ← 名字被交換
+22:03  另一 session 在同一個工作目錄 commit 並 push
+       它用的 URL 是舊的 A → 被導向到 A-frozen
+結果：新 commit 落在「凍結備份」裡，主 repo 反而落後一個 commit
+```
+
+沒有任何錯誤訊息——push 成功、對方以為推上去了、主 repo 安靜地少一個 commit。
+
+### 三條規則
+
+1. **改名前先 `pgrep`／問一聲有沒有人在同一個工作目錄工作。** 多 session 共用同一個
+   `.git`，你看到的「未提交變動」下一秒可能就變成別人的 commit（本輪就是：我報告
+   「這是另一 session 未提交的檔」，三分鐘後它已經是 `HEAD`）。
+2. **改名後立刻對帳三個數字**：本機 `HEAD`、新名 repo 的 `main`、舊名 repo 的 `main`。
+   三者不一致就是有 push 走岔了。用 API 查（`gh api repos/<owner>/<name>/commits/main`），
+   不要用 `git ls-remote`——後者也吃重新導向，會告訴你「舊名還活著」而看不出它其實指向新家。
+3. **快照要打 tag，不要靠「某個 repo 的 HEAD 停在那裡」。** 「留舊 repo 當保險」這個
+   做法的保險性來自 HEAD 的位置，而 HEAD 會被別人的 push 推走。改用
+   `git tag pre-merge-<date> <sha>` 並推到兩邊——**tag 不會因為誰 push 就移動**。
+
+> 修復很簡單（把落後的那邊 fast-forward 上去即可，commit 本身沒丟），
+> 但**發現它靠的是主動對帳**。這類錯誤不會自己喊。
