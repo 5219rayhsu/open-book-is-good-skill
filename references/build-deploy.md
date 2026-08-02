@@ -322,3 +322,55 @@ _raw/
 **預設不要。** 建置工具會引用內部方法論名稱、私有 repo 名與絕對路徑——
 發佈腳本的敏感字掃描樣式**本身就是那份清單**。本機 repo 已經給了回溯點與 diff，
 那是當初要納管的全部理由；推到雲端是另一個決定，要單獨問。
+
+## 把資料 repo 併進工具 repo：`git subtree` ＋ 發佈只取子樹（2026-08-02）
+
+工具與資料分兩個 private repo，代價是**同一輪工作被切成兩個 commit、兩段歷史**——
+而這類專案的資料**幾乎都是腳本產的**，工具版本與資料版本本來就該綁在一起。
+合併是對的；關鍵在**別因此把「絕不能公開」的東西放進發佈路徑**。
+
+### 一行決定安全性
+
+```bash
+git -C "$SRC"  archive HEAD        # 合併前：資料 repo 的整個根
+git -C "$ROOT" archive HEAD:_dev   # 合併後：只取這個子樹
+```
+
+`git archive` 可以只匯出子樹。改成 `HEAD:<prefix>` 之後，工具**結構性地在發佈路徑之外**
+——跟分開放時完全一樣。若忘了改，敏感字掃描會擋下發佈（fail-safe），
+**但那是最後防線不是設計**。結構正確 > 規則正確：後者只要誰改錯一行排除清單就失效。
+
+### `git subtree add` 保留原始 SHA，代價是路徑不改寫
+
+```bash
+mv _dev _dev.orig                        # 工作目錄挪開，不刪
+git remote add dev <url> && git fetch dev
+git subtree add --prefix=_dev dev main   # 帶完整歷史併入
+diff -rq _dev _dev.orig -x .git          # 逐檔比對，追蹤檔必須零差異
+```
+
+- ✅ **原始 commit SHA 保留**：`git show <舊SHA>:data/...` 仍取得到。
+- ⚠️ **舊 commit 裡的路徑仍是舊的**：`git log -- _dev/data/x` 看不到併入前的歷史，
+  要用舊路徑 `git log -- data/x`。
+
+**這個代價是刻意選的**：用 `filter-repo` 改寫路徑會讓所有 SHA 變動，而專案文件
+（進度紀錄、ADR、commit 訊息）引用了大量 SHA——**改寫等於讓全部引用失效**。
+兩害相權，寧可記住「舊路徑查舊歷史」這條規則。
+
+### 三個一定會咬人的地方
+
+1. **白名單型 `.gitignore` 會把併進來的資料檔全擋掉**。
+   `*` ＋ `!*.py/.sh/.md` 的規則會擋掉 `_dev/data/*.json`。要加 `!_dev/**`，
+   讓 `_dev/.gitignore` 自己治理——**git 的規則是越深層的 `.gitignore` 越優先**。
+2. **被 gitignore 的本機檔不會跟著搬。** `mv` 整個目錄之後，`subtree add` 只還原
+   **committed** 的內容；`.bak` 回溯點、裁切前備份、`_scratch/` 全部留在 `.orig` 裡。
+   要 `rsync -a --ignore-existing` 補回去，再 `diff -rq` 複驗一次。
+3. **前置檢查會誤擋。** 原本寫 `[ -d "$SRC/.git" ]`（來源 repo 存在嗎）——子目錄
+   已經沒有 `.git` 了。改驗真正要取的東西：
+   `git rev-parse --verify -q "HEAD:_dev"`。**只檢查目錄存在會放過「目錄在、
+   但沒 commit 進 repo」**，那正是發佈會拿到空內容的情形。
+
+### 驗收：唯讀發佈的 diff 必須是空的
+
+這是最強的單一證據——**子樹匯出的內容與線上位元相同，代表整個合併沒動到任何會上線的東西**。
+比逐項檢查清單可靠，因為它驗的是最終產物而不是中間步驟。
