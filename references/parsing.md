@@ -778,3 +778,37 @@ pdftoppm -png -r 900 -f <頁> -l <頁> \
 `[豈-﫿]` 這種寫在原始碼裡的字元類，**在編輯與複製過程中容易被正規化掉**（實測整條
 regex 被折成無效樣式而拋 `nothing to repeat`）。改用 `0xF900 <= ord(ch) <= 0xFAFF`
 明寫範圍——多幾個字，但不會在別人複製貼上時默默失效。
+
+### 🔴 §14 掃描器只掃「你想得到的欄位」，就只驗得到你想得到的欄位
+
+宣告「全庫異常字元 0」之後，發佈前的不變式檢查在 `gsat/bank.json` 又抓到 26 處
+造字。兩邊都沒錯：**掃描器掃的是 `stem` 與 `options`，這 26 處在 `table` 欄位**
+（表格題的 `headers`／`rows`）。那個欄位存在很久，但沒有任何掃描器看過它。
+
+判準：**掃描資料完整性時，遞迴走訪整個物件，不要列舉欄位名。**
+
+```python
+def walk(o, path):
+    if isinstance(o, str):
+        for i, c in enumerate(o):
+            if 0xE000 <= ord(c) <= 0xF8FF or 0xF900 <= ord(c) <= 0xFAFF:
+                yield path, f"U+{ord(c):04X}", i
+    elif isinstance(o, dict):
+        for k, v in o.items(): yield from walk(v, f"{path}.{k}")
+    elif isinstance(o, list):
+        for i, v in enumerate(o): yield from walk(v, f"{path}[{i}]")
+```
+
+列舉欄位名的掃描器**失敗方向是靜默的**——欄位長出來的那天它不會報錯，只會少報。
+遞迴版多寫六行，換掉整個類別的盲區。**「全庫 0」這種話，只有在遞迴掃描下才能講。**
+
+### §15 表格題的上下標會整批剝離並移位（與造字是不同的病）
+
+同一批 `table` 欄位裡，`ZnSO₄` 入庫成 `ZnSO 4`、`Na₂S` 成 `Na S 2`、
+`10⁻⁶` 成 `106`、`甲（c₁）` 成 `甲（c ） 1`——**下標被抽出來丟到字串尾端**。
+造字只是順帶：`U+F06D`／`U+F065` 是 Symbol 字型的 `m`／`e`＝μ／ε，
+`U+F02D` 是上標負號（同族的 `U+F0B4`＝×）。
+
+所以看到 `table` 裡有造字時，**不要只換那個字元**——先把整格拿去跟原卷對照，
+上下標多半也壞了。修法是重建整格文字，用 Unicode 上下標字元（`₄` `⁻⁶` `²⁺`），
+不是塞 `<sub>`（該欄位是純字串，前端直接渲染進 `<table>`）。
