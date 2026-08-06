@@ -69,8 +69,9 @@ description: 考古題自學系統（官方開放試題→題庫→詳解→上�
 | 前端作答引擎 | `frontend-engine-rules.md` | — |
 | 四道門的證據與程式 | `gates.md` | — |
 
-三份大檔（`parsing.md` 990＋、`batching-and-measurement.md` 970＋、
-`explanations-redteam.md` 780＋）**開頭都有目錄，用節名搜尋不要從頭讀**。常用定位：
+**每份 reference 開頭都有目錄（超過百行者）——用節名搜尋，不要從頭讀。**
+最大的三份是 `parsing.md`、`batching-and-measurement.md`、`explanations-redteam.md`。
+常用定位：
 
 ```bash
 rg -n 'PUA|ToUnicode|造字'      references/parsing.md          # 選項標記毀損
@@ -149,7 +150,7 @@ test -f 國考與升學/LOOP_PLAN.md \
 | --- | --- |
 | **答案配對全驗（必跑）** | 每題 `answer` 逐題對官方標準答案核對、**全跑不抽樣**，修到 0 mismatch 才往下。 |
 | **詳解紅隊（必跑）** | AI 生成解析後一定要反駁式紅隊；**執行前問使用者全跑或抽查**。抽查時真錯達 k≥4、n≈40（Wilson CI 下界 ≥ 4%）才升級該科到更強模型。 |
-| **全形 lint** | 中文段落不可混半形標點；CI 一道門。修正用 CJK 規則，**寧可漏轉、不可誤轉**（保住比值 `3:1`、數字後標點）。 |
+| **全形 lint** | 中文段落不可混半形標點；CI 一道門。修正用 **CJK 後綴規則**（`explanations-redteam.md` §5.2），**寧可漏轉、不可誤轉**（保住比值 `3:1`、數字後標點）。 |
 | **詳解須查證** | 每則標把握度 `c` ＋ `meta.note` 寫明「AI 整理，非官方標準答案，須查證」。 |
 | **節制門** | 只修確認的錯，不為純措辭改；改完重 lint、重驗，最小變動面。 |
 | **逐字忠實** | 解析絕不改寫／摘要／翻譯；題組絕不拆散；自驗把「忠實」變可檢查條件。 |
