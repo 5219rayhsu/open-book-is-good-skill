@@ -68,7 +68,7 @@ description: 考古題自學系統（官方開放試題→題庫→詳解→上�
 | 詳解生成 | `explanations-redteam.md` §1–§2 | 紅隊 |
 | 紅隊查核 | `explanations-redteam.md` §3＋`reviewer-input-parity.md` | 必跑；**先問使用者全跑或抽查** |
 | 修復站／修詳解／修題 | `explanations-redteam.md` §13＋`dirty-data-robustness.md` 四 | 段落級；修題必檢詳解 |
-| 跑批／量測／選模型 | `batching-and-measurement.md` §12′、§13、§14、§15、§21 | 臂等價閘 |
+| 跑批／量測／選模型 | `batching-and-measurement.md` §12′、§13、§14、§15、§21、**§23** | 臂等價閘；**§23 後端閘**（雙軌不可硬編、模型與 effort 不給預設） |
 | build／上線／發佈 | `build-deploy.md` | preview smoke 0 console error；**推送須使用者當次授權** |
 | 前端作答引擎 | `frontend-engine-rules.md` | — |
 | 四道門的證據與程式 | `gates.md` | — |
