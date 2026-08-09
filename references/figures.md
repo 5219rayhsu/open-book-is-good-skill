@@ -237,6 +237,52 @@ base64 字串塞進對話／終端／工具輸出會觸發 Anthropic AUP 內容�
 - **會考**（`extract_figures_cap.py`）：只刪除／重建本腳本負責科目的 `C{年}_{科}_*` PNG，**不動學測的 `S/G/E` 圖**。
 - 兩支共用同一套 band／圖底保護機制；`extract_figures.py` 的定位與 render 邏輯**可重用於會考**，會考版即是沿用並按版面差異改寫而成。
 
+### 🔴 派工前先把工具鏈裝滿——沙盒沒有網路，缺一個套件就等於整條支線停擺
+
+裁圖代理跑在**無對外網路**的沙盒裡，它裝不了任何東西。所以「缺什麼套件」不會在
+執行期被補上，只會變成一批**看起來像資料缺陷的工單**。
+
+實測 2026-08-09（分科測驗，401 題）：venv 少了 `scipy`，**數學甲／乙 19 題**
+全數失敗，理由 `math_erase_text_requires_scipy_unavailable`。代理照操作卡的規矩
+**回報工具缺口、沒有交降級品**——這是對的，也是唯一讓人一眼看出真因的做法。
+如果它硬湊出 19 張假圖，下游會拿真實資料去修一批根本沒壞的東西。
+
+派工前把 venv 建好、**逐一 import 驗過**：
+
+```bash
+uv pip install --python .venv-pdf/bin/python pymupdf numpy pillow scipy
+.venv-pdf/bin/python -c "import fitz, numpy, PIL, scipy; print('ok')"
+```
+
+| 套件 | 誰要用 | 缺了會怎樣 |
+| --- | --- | --- |
+| `pymupdf`（`fitz`） | 全部——物件層偵測、bbox、render | 整條線跑不動，會立刻爆 |
+| `numpy` | whitespace-trim 的墨跡 bbox、edge-touch 判定 | 裁圖沒有白邊修剪，切邊偵測失效 |
+| `pillow` | 存 PNG、contact sheet 拼版 | 產不出驗收用的 contact sheet |
+| `scipy` | **只有數學科的 erase-text 路徑**（連通元件標記） | 數學卷靜靜失敗，其他科完全正常 |
+
+`scipy` 特別容易漏，因為**只有數學科用得到**：非數學科全綠，報表看起來很健康，
+缺口只出現在一個子集裡。**一個只在部分子集用到的依賴，它的缺席會偽裝成那個子集的
+資料特性。** 所以驗證要用 `import`，不要用「跑一科看看有沒有錯」。
+
+**根因不是忘了裝，是換了呼叫慣例。** skill `exam-pdf-asset-extractor` 的指令行本來
+把依賴**帶在自己身上**：
+
+```bash
+uv run --with pymupdf --with numpy --with scipy --with pillow python …
+```
+
+專案為了省下每次解析的時間，改成一個常駐的 `.venv-pdf`。這一步把依賴清單從
+**「跟著指令走、不可能漏」**變成**「要有人維護、漏了沒人知道」**——而漏掉的正是
+那個只有子集用到的。
+
+> 用共用環境取代 `uv run --with` 這類自帶依賴的呼叫時，**那份 `--with` 清單就是
+> 你新環境的驗收清單**，要逐項 import 驗過。省下的是啟動時間，換來的是一份
+> 需要維護的隱性契約。
+
+操作卡裡對應的那條硬規則是：**拿不到指定工具就停下來回報，不要交降級品**——
+把工具缺口寫成資料缺陷，成本比明顯的失敗高得多。
+
 ### 用法
 
 ```bash
