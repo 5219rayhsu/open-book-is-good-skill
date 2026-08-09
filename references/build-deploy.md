@@ -592,3 +592,41 @@ await Promise.all(keys.map(k => caches.delete(k)));
 | **`SKILL.md`（＋ `references/`）** | AI agent | 復刻手冊本體，給 agent 載入執行。 |
 | **skill repo 的 `README.md`** | 逛 GitHub 的人 | 門面：這 skill 是什麼、怎麼裝、怎麼用、授權。 |
 | **產物／專案 `README.md`** | 大眾／貢獻者 | **理念 ＋ 如何貢獻**——對社群參與最重要，但最常被漏掉。 |
+
+## 🔴 驗上線內容時，`raw.githubusercontent.com` 自己也有快取（2026-08-09）
+
+本手冊一直有一條「**驗上線要驗內容，不要驗 exit code**」，做法是 `curl` 線上的
+`bank.json` 回來數。2026-08-09 推完之後照做，結果連續三次都讀到**舊的數字**
+（nursing 10,062/10,070，實際推上去的是 10,070/10,070），連加 `?cb=<timestamp>`
+與 `Cache-Control: no-cache` 都一樣。
+
+差點就依這個讀數宣告「推送沒生效」，然後回頭去查一個根本不存在的問題。
+
+**`raw.githubusercontent.com` 是 CDN，它的快取可以撐幾分鐘。** 所以：
+
+> 「驗內容不要驗 status code」是對的，但**內容也可能是舊的**。
+> 一個會回你舊值的來源，跟一個不回答問題的 status code，誤導性是同一級的。
+
+**零快取、零 base64 的驗法：比對 blob SHA。**
+
+```bash
+git hash-object _dev/data/nursing/bank.json
+curl -s "https://api.github.com/repos/<owner>/<repo>/contents/data/nursing/bank.json" \
+  | python3 -c "import json,sys;print(json.load(sys.stdin)['sha'])"
+```
+
+兩邊相同即證明**線上那份就是本機這份**，逐位元組相同。
+Git 的 blob SHA 本來就是內容雜湊，所以這是內容比對不是後設資料比對；
+而且 API 回的是 SHA 不是內容，**不會把 base64 塞進工具輸出**（那會觸發過濾器、kill session）。
+
+不同才需要繼續查。相同就結束，不要再去讀 CDN。
+
+### 順帶：`publish_platform.sh` 發佈的是 `HEAD:_dev`，不是工作區
+
+同一輪還踩到另一半：把 13 題升成 `parse:ok` 之後**沒有 commit** 就跑發佈，
+於是那 13 題沒有出去。而且**預覽也看不出來**——「將發佈的變更」那段同樣是從 `HEAD`
+算的，預覽與實際推送**一致地都少了那 13 題**，兩邊互相印證，看起來完全正常。
+
+> 一致不等於正確。當預覽與產出來自同一個錯誤的來源時，它們會互相背書。
+
+發佈前先 `git status _dev/data`，工作區有未提交的改動就先提交再推。
