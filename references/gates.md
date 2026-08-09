@@ -512,3 +512,74 @@ hook 便宜但會累積，累積到一定量就開始干擾連續工作。判準
 > 「模型變聰明就不需要 hook」對一半：會隨智力歸零的是**判斷型** hook
 > （官方明列的反模式就是「用 hook 複製模型的決策邏輯」）；不會歸零的是**觀測保證型**——
 > **再聰明的模型也讀不到被 `2>/dev/null` 消掉的訊號。智力修不了觀測通道的洞。**
+
+---
+
+### 推論四：閘門把自己的補救說明吞掉，比擋不下來更難查（2026-08-09）
+
+新寫的 fail-closed 閘門長這樣：
+
+```zsh
+echo "✗ 靜態頁落後於題庫，共 $total 個檔：" >&2
+printf '%s\n' "$dirty" | head -5 >&2          # ← 這一行
+echo "   先 commit 這些檔案再發佈——發佈取的是 HEAD:_dev" >&2
+return 1
+```
+
+實測擋下來了，但使用者看到的是**一句沒有下文的錯誤**，腳本退出碼 **141**。
+
+成因：`set -eo pipefail` 之下，`head` 讀滿五行就關掉管線 → `printf` 收到 `SIGPIPE`
+→ 整條管線回 141 → `set -e` 當場中止函式。**第三行的補救指示根本沒有機會印出來**，
+`return 1` 也沒有執行到。閘門擋對了，但它把「接下來該做什麼」連同自己的退出碼一起吞了。
+
+這是靜默 no-op 家族的另一員（前面幾位：`pdf.name.replace()`、
+`git add <ignored>`、把 `2>/dev/null` 接在會警告的指令後面）。共同形狀是
+**執行者親手消掉了自己需要的訊號**，而消掉之後的畫面跟正常一模一樣。
+
+修法：不要在 `set -eo pipefail` 的閘門裡用 `… | head -n`。用 here-string 迴圈，
+順便滿足「不得靜默截斷」——列了幾筆、還有幾筆沒列，都要說出來：
+
+```zsh
+local line shown=0 total
+total="$(wc -l <<< "$dirty" | tr -d ' ')"
+while IFS= read -r line; do
+  echo "   $line" >&2; shown=$((shown + 1))
+  [ "$shown" -ge 5 ] && { [ "$total" -gt 5 ] && echo "   …另有 $((total - 5)) 個未列出" >&2; break; }
+done <<< "$dirty"
+```
+
+**驗收要看退出碼，不要只看有沒有擋下來。** `./gate; echo $?` 應該是 1；
+是 141／143 就代表中止點不在你以為的那一行。
+
+---
+
+### 推論五：閘門的樣式若比對得到自己的解釋註解，它就是恆真／恆假的（2026-08-09）
+
+那道跨檔一致性斷言的第一版是：
+
+```python
+assert "Disallow: /data/" not in render_robots()
+```
+
+它**立刻紅了**——而 `render_robots()` 產出的檔案裡根本沒有那條指令。
+命中的是我為了說明「這裡刻意沒有 Disallow」而寫的那段註解。
+
+反過來想更危險：如果當時那段註解沒寫，這道斷言會一路綠燈，而它綠的理由
+與它想驗的事情無關。**一道會被自己的說明文字觸發的樣式，也會被別的無關文字放過。**
+
+修法是**先把格式解析乾淨，再比對語意**——robots.txt 的 `#` 之後對爬蟲無效：
+
+```python
+rb_rules = [ln.split("#")[0].strip() for ln in rb.splitlines()]
+assert not any(r.lower().startswith("disallow") and "/data/" in r for r in rb_rules)
+```
+
+**硬規則（與 §A3.1 的兩側驗證同一條）**：新寫的判定式必須在 **known-good 與
+known-bad 兩種輸入各跑一次**，兩次結果不同才算數。
+
+```
+known-bad（真的有指令）    → True
+known-good（只在註解裡提到）→ False
+```
+
+兩次跑出同一個答案的判定式，不管答案是什麼，它驗到的都不是你要的東西。
