@@ -359,24 +359,34 @@ def loadPack(path: Path | None = None) -> dict[str, Any]:
 
 
 def buildPack() -> int:
-    pack: dict[str, Any] = {}
-    errors: list[str] = []
-    for name, pcode in CORE_LAWS:
-        try:
-            pack = {**pack, name: fetchLaw(name, pcode)}
-            print(f"fetched: {name}", file=sys.stderr)
-        except AnchorPackError as exc:
-            errors.append(str(exc))
-            print(f"ERROR: {exc}", file=sys.stderr)
-    if not pack:
-        raise AnchorPackError("build failed: no laws were fetched; existing pack was not changed")
-    atomicWriteJson(PACK_PATH, pack)
-    print(f"wrote {len(pack)}/{len(CORE_LAWS)} laws to {PACK_PATH}")
-    if errors:
-        print("build incomplete:", file=sys.stderr)
-        for error in errors:
-            print(f"- {error}", file=sys.stderr)
-        return 1
+    """從法務部 Open API 的 bulk dump 重建 anchor pack（2026-08-18 起）。
+
+    ⚠️ **`--build` 走 dump，`--check` 仍走即時網頁**，這個分工是刻意的：
+
+    - `--build` 要的是**正確的全文**。舊的逐部爬 HTML 路徑實測有三種文字毀損：
+      6,530/6,989 條（93%）的全形標點被 `parseLawPage` 的 NFKC 壓成半形；
+      32 條（每一部法的最後一條，一部不漏）尾端黏著網站的跳過導覽記號 `:::`；
+      325 條尾端黏著下一個「節／編」標題（`cleanArticleBody` 只剝「第X章」）。
+      也就是說，紅隊拿來查證法源的那份「官方條文」從來就不是官方條文。
+    - `--check` 要的是**最新**。dump 每週五更新、資料整編有截止日，實測落後現行公布
+      約 7–14 天；拿它回答「有沒有過期」等於用可能落後兩週的資料判斷新不新。
+      而且 `--check` 每月實跑一次抓頁＋解析全鏈路，順帶當「爬蟲沒被改版打壞」的探針。
+
+    換源前量過的兩件事（都在 `progress_log.md` 2026-08-18）：條文集合零增減；
+    `--verify` 對 3,860 筆引用零翻盤（`extractKeyNumbers` 內部本來就先做 NFKC，
+    比對一直發生在正規化之後的空間，所以 pack 存全形或半形都到不了判定）。
+    """
+    sys.path.insert(0, str(SCRIPT_DIR))
+    import law_dump  # noqa: PLC0415
+
+    try:
+        law_dump.fetch()
+        out = law_dump.build_pack(CURRENT_EXAM)
+    except law_dump.LawDumpError as exc:
+        raise AnchorPackError(f"build failed: {exc}") from exc
+    pack = json.loads(out.read_text())
+    articles = sum(len(entry.get("articles", {})) for entry in pack.values())
+    print(f"wrote {len(pack)}/{len(CORE_LAWS)} laws ({articles} articles) to {out}")
     return 0
 
 
