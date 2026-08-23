@@ -214,17 +214,17 @@ python3 scripts/build_app.py
 | **產物／專案 `README.md`** | 大眾／貢獻者 | **理念 ＋ 如何貢獻**——對社群參與最重要，但最常被漏掉。 |
 
 ## 教訓索引（已搬至 X-lessons.md）
-- §7 發佈時清單裡有別人改的檔：推之前要自己驗（2026-08-02） → X-lessons.md §7
-- §8 `.gitignore` 的 `*.bak*` 擋不到**目錄名**（2026-08-02） → X-lessons.md §8
-- §9 發佈閘門本身要有版本控管（2026-08-02） → X-lessons.md §9
-- §10 把資料 repo 併進工具 repo：`git subtree` ＋ 發佈只取子樹（2026-08-02） → X-lessons.md §10
-- §11 🔴 「另走某某路線」的註解要配一個可查的出口（2026-08-06） → X-lessons.md §11
-- §12 🔴 落地頁的數字會嚴重過期，而資料層完全看不出來（2026-08-06） → X-lessons.md §12
-- §13 🔴 一條沒有被載入的規則，寫在哪一層都一樣是零（2026-08-06） → X-lessons.md §13
-- §15 🔴 驗上線內容時，`raw.githubusercontent.com` 自己也有快取（2026-08-09） → X-lessons.md §15
-- §16 🔴 衍生產物沒有呼叫者，就只會在有人記得的那天是新的（2026-08-09） → X-lessons.md §16
-- §17 🔴 robots.txt 與 llms.txt 可以各自都對、合起來不可能同時遵守（2026-08-09） → X-lessons.md §17
-- §18 逐題靜態頁做不到，但「逐題可被指名」做得到（2026-08-09） → X-lessons.md §18
-- §19 🔴 打包單檔時，`</script>` 要由打包器逃逸——原始碼自律擋不住註解（2026-08-14） → X-lessons.md §19
-- §20 🔴 內嵌資料的收集器，要照著「讀者怎麼讀」收，不是照著「欄位叫什麼」收（2026-08-14） → X-lessons.md §20
-- §21 離線單檔放哪：Workers 靜態資源單檔 25 MiB 是硬牆（2026-08-14） → X-lessons.md §21
+- build-deploy-lessons.md §7：發佈時清單裡有別人改的檔：推之前要自己驗（2026-08-02）
+- build-deploy-lessons.md §8：`.gitignore` 的 `*.bak*` 擋不到**目錄名**（2026-08-02）
+- build-deploy-lessons.md §9：發佈閘門本身要有版本控管（2026-08-02）
+- build-deploy-lessons.md §10：把資料 repo 併進工具 repo：`git subtree` ＋ 發佈只取子樹（2026-08-02）
+- build-deploy-lessons.md §11：🔴 「另走某某路線」的註解要配一個可查的出口（2026-08-06）
+- build-deploy-lessons.md §12：🔴 落地頁的數字會嚴重過期，而資料層完全看不出來（2026-08-06）
+- build-deploy-lessons.md §13：🔴 一條沒有被載入的規則，寫在哪一層都一樣是零（2026-08-06）
+- build-deploy-lessons.md §15：🔴 驗上線內容時，`raw.githubusercontent.com` 自己也有快取（2026-08-09）
+- build-deploy-lessons.md §16：🔴 衍生產物沒有呼叫者，就只會在有人記得的那天是新的（2026-08-09）
+- build-deploy-lessons.md §17：🔴 robots.txt 與 llms.txt 可以各自都對、合起來不可能同時遵守（2026-08-09）
+- build-deploy-lessons.md §18：逐題靜態頁做不到，但「逐題可被指名」做得到（2026-08-09）
+- build-deploy-lessons.md §19：🔴 打包單檔時，`</script>` 要由打包器逃逸——原始碼自律擋不住註解（2026-08-14）
+- build-deploy-lessons.md §20：🔴 內嵌資料的收集器，要照著「讀者怎麼讀」收，不是照著「欄位叫什麼」收（2026-08-14）
+- build-deploy-lessons.md §21：離線單檔放哪：Workers 靜態資源單檔 25 MiB 是硬牆（2026-08-14）

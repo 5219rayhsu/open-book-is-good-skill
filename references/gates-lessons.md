@@ -62,7 +62,7 @@
 - **指標要有兩個入口，人一個、機器一個。** 人讀的寫進 ADR；
   機器讀的寫進閘門自己的帳本，且 **key 的形狀必須讓閘門不可能把它當成一筆證據**
   （例如底線開頭、外加顯式 `parity: "unverified"` 欄位）。
-  這是 §A4 那條律在**指標**上的實例：指標不是證明，兩者同形就會被讀成證明。
+  這是 gates.md §A4 那條律在**指標**上的實例：指標不是證明，兩者同形就會被讀成證明。
 - **刪除獨立成一個 commit**，指標引用它的父 sha。混在別的變更裡，
   將來 blame 要花十倍時間才能還原「刪之前長什麼樣」。
 
@@ -75,7 +75,7 @@
 「缺產物＝未跑」那條擋住的是**沒留下痕跡**。還有一種更安靜的失效：**產物在、狀態欄
 寫著 `not_run`、旁邊附了一個理由，而那個理由是錯的。**
 
-實測：某科的門 §A 報告寫
+實測：某科的門 gates.md §A 報告寫
 
 ```json
 {"status": "not_run", "reason": "本 repo 未留該科官方答案 PDF（找不到 <路徑> 下的答案檔）"}
@@ -119,7 +119,7 @@
 - 順帶一提：**寫回時要保持原檔的排版**。單行 JSON 用 `indent=1` 寫回去，
   4 筆改動會變成 7 萬行 diff，等於把改動藏起來，review 時沒有人看得見。
 
-同族：§P（回傳值被丟掉）、batching-and-measurement.md §31（產物只活在回傳值裡）。
+同族：§P（回傳值被丟掉）、batching-and-measurement-lessons.md §31（產物只活在回傳值裡）。
 
 ---
 
@@ -245,7 +245,7 @@ no-lesson-for: d0d3b24 ~多選~ 這條已由 lint 的 canary 覆蓋
 不警告、不非零退出。於是 commit 訊息可以理直氣壯地宣稱「同時落盤了題庫」，
 而那個檔從頭到尾不在版本控制裡。實測 2026-08-09 一晚犯三次。
 
-這與 §A1 那個 `pdf.name.replace("試題","答案")` 是**同一個東西**：
+這與 gates.md §A1 那個 `pdf.name.replace("試題","答案")` 是**同一個東西**：
 **靜默 no-op 讓「我沒做這件事」偽裝成「這件事做了」。**
 
 判準：**凡是「把東西加進某個集合」的操作，都要回頭確認它真的進去了。**
@@ -358,7 +358,7 @@ rb_rules = [ln.split("#")[0].strip() for ln in rb.splitlines()]
 assert not any(r.lower().startswith("disallow") and "/data/" in r for r in rb_rules)
 ```
 
-**硬規則（與 §A3.1 的兩側驗證同一條）**：新寫的判定式必須在 **known-good 與
+**硬規則（與 gates.md §A3.1 的兩側驗證同一條）**：新寫的判定式必須在 **known-good 與
 known-bad 兩種輸入各跑一次**，兩次結果不同才算數。
 
 ```
@@ -431,7 +431,7 @@ commit         → 閘門：0 則過期    ❌ 那 44 則一個字都沒動
 ### 判準
 
 **每一則衍生物,在生成當下,蓋一枚它所依賴那筆來源的內容指紋**
-（只取衍生物真正依賴的欄位，見 §A3 的欄位清單紀律）。驗證時只跟現況比：
+（只取衍生物真正依賴的欄位，見 gates.md §A3 的欄位清單紀律）。驗證時只跟現況比：
 
 ```python
 stale = [qid for qid, stamp in stamps.items() if stamp != fingerprint(current[qid])]
@@ -439,7 +439,7 @@ stale = [qid for qid, stamp in stamps.items() if stamp != fingerprint(current[qi
 
 與任何 commit 無關 ⇒ commit、搬檔、改路徑、rebase 都洗不掉。
 
-**未蓋章的要單獨計數並印出來，不得計入通過**——不知道 ≠ 沒問題（§A4 同一條）。
+**未蓋章的要單獨計數並印出來，不得計入通過**——不知道 ≠ 沒問題（gates.md §A4 同一條）。
 指紋會隨著每一批 merge 累積，未蓋章數只會往下走；把它印在報表上，
 它就自己變成一條進度條。
 
@@ -644,7 +644,7 @@ return 0                                          # ← 修正日期全對就回
 - 靜態檢查抓得到的形狀：**被指派卻從未被讀取的區域變數**。凡是變數名叫
   `result`／`status`／`errors` 而後續沒出現，都要當成閘門斷線的候選。
 
-同族：§F、batching-and-measurement.md §31。
+同族：§F、batching-and-measurement-lessons.md §31。
 
 ---
 

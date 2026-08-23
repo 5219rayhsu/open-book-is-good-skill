@@ -218,13 +218,17 @@ test -f 國考與升學/LOOP_PLAN.md \
 | 檔 | 主題 |
 | --- | --- |
 | `references/gates.md` | **四道必跑門的證據庫**：rationale、程式、實測案例、產物形狀要求 |
+| `references/gates-lessons.md` | `references/gates.md` 的教訓日誌（按事故日期；節號沿用正本） |
 | `references/data-sources.md` | 資料源偵察、下載、著作權 §9、clean-room、三層授權、bank.json schema（含 `standalone`／`locate_anchor`） |
 | `references/parsing.md` | judgment 式解析、markitdown vs pymupdf、每科 parser、**§4′ 題組作答政策分類**、冪等 merge、自驗、PUA 造字與 ToUnicode 毀損 |
 | `references/figures.md` | 裁圖（整塊 render）、定位、**圖→題對應隨考試家族變**、**KaTeX 分流與假圖訊號**、band 邊界、base64 安全架構、保真 |
 | `references/explanations-redteam.md` | clean-room 詳解、三段固定結構、品質拉齊五機制、token 工程七槓桿、**§2 模型五層表＋§2.2′ 舊表對照**、反駁式紅隊、Wilson 停止規則、**§13 段落級修復**、作文政策 |
+| `references/explanations-redteam-lessons.md` | `references/explanations-redteam.md` 的教訓日誌（按事故日期；節號沿用正本） |
 | `references/build-deploy.md` | build 單檔／網站、PWA／Service Worker、體積永續、發佈閘門、落地頁數字會過期、**三層文件**、skill 觸發面事故 |
+| `references/build-deploy-lessons.md` | `references/build-deploy.md` 的教訓日誌（按事故日期；節號沿用正本） |
 | `references/dirty-data-robustness.md` | NFKC 正規化、寬鬆匹配、零筆即報、不吞錯、原子寫入、官方 PDF 文字層毀損的偵測與 vision 復原硬門、**四、修題必檢詳解** |
 | `references/batching-and-measurement.md` | 消除工具往返、批次大小算式、token 量測紀律、**§12′ 重測三坑**、§13 評測環境須與生產一致、§14 樣本量先算、**§15 臂等價**、§21 量測迴路的污染 |
+| `references/batching-and-measurement-lessons.md` | `references/batching-and-measurement.md` 的教訓日誌（按事故日期；節號沿用正本） |
 | `references/reviewer-input-parity.md` | 審查者輸入等價：欄位可見性註冊表、源頭可審性 lint、物化 payload parity、熔斷器、圖片盲區協議 |
 | `references/shared-question-banks.md` | 科目重疊矩陣、共用科目建一次、`exams` 陣列、去重紀律、混卷模擬考內容指紋去重、跨年孿生題不可 stem-only 去重 |
 | `references/frontend-engine-rules.md` | 題組／承上題情境引入規則、出題演算法、標記與儲存的職責分工 |

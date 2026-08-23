@@ -407,10 +407,10 @@ n=120 →  3 vs  9  p=0.14      n=400 → 10 vs 30  p=0.0017
 
 ## 15. 🔴 實驗臂輸入等價：兩臂收到的字不同，比的就不是模型（2026-08-02）
 
-> 📌 本節原本排在 §17 之後（它是後來補寫的，直接附在檔尾）。
+> 📌 本節原本排在 batching-and-measurement-lessons.md §17 之後（它是後來補寫的，直接附在檔尾）。
 > 2026-08-06 移到這裡，讓節號單調——**外部引用的 `§15` 一律指本節**
 > （`SKILL.md`、`scripts/arm_parity.py`、`scripts/README.md`），所以搬的是位置、
-> 不動編號；緊接其後的 `§15′` 是另一則、與本節無關，只是編號相鄰。
+> 不動編號；緊接其後的 `batching-and-measurement-lessons.md §15′` 是另一則、與本節無關，只是編號相鄰。
 
 §13 管的是「評測 vs 生產」這條軸，本節管「臂 vs 臂」——同日、同病、不同軸。
 另可對照 `reviewer-input-parity.md`：**兩個應該看到同樣東西的角色，實際看到不一樣的東西，
@@ -713,26 +713,26 @@ exam     = os.environ.get("EXAM", "counseling")   # 對到哪個題庫
 
 ## 教訓索引（已搬至 batching-and-measurement-lessons.md）
 
-- §5 併發上限固定時，pipeline **不會**增加吞吐量（2026-08-01 實戰，一次判斷錯誤換來的） → batching-and-measurement-lessons.md §5
-- §8 批次式併發的隱藏損失：每批都被最慢的那塊拖住（2026-08-01 實測） → batching-and-measurement-lessons.md §8
-- §9 跑批進行中讀產出檔：旁觀者必須容忍半截檔（2026-08-01） → batching-and-measurement-lessons.md §9
-- §10 🔴 有效 ≠ 完整：兩層閘門都不看題數，短塊會靜默蒸發（2026-08-01 實戰） → batching-and-measurement-lessons.md §10
-- §11 收工停跑批：`pkill` 的作用域是整台機器（2026-08-02） → batching-and-measurement-lessons.md §11
-- §15′ 🔴 「該改的有沒有動」不等於「改對了」（2026-08-02，判分器讀反的第四例） → batching-and-measurement-lessons.md §15′
-- §16 `git rev-list --all` 包含 `refs/stash`（2026-08-02） → batching-and-measurement-lessons.md §16
-- §17 接手檔要收攏成兩份，父計畫不可抄子線的數字（2026-08-02） → batching-and-measurement-lessons.md §17
-- §18 多 session 下改 repo 名：push 會被重新導向到你不預期的地方（2026-08-02） → batching-and-measurement-lessons.md §18
-- §19 🔴 「需人工改寫」常常是**操作選錯**，不是真的需要人腦（2026-08-02） → batching-and-measurement-lessons.md §19
-- §20 🔴 修復器認不出結構時，會生出**比輸入更壞**的輸出（2026-08-02） → batching-and-measurement-lessons.md §20
-- §22 🔴 回報一個數字之前，先確認它回答的是對方要決定的那件事（2026-08-07） → batching-and-measurement-lessons.md §22
-- §24 🔴 冪等判準從來沒問過「這是誰的輸出」——前綴撞號會讓整塊靜默跳過（2026-08-09 實戰） → batching-and-measurement-lessons.md §24
-- §25 🔴 配額快照沒有時效檢查：兩天前的 100% 與現在的 100% 完全同形（2026-08-09） → batching-and-measurement-lessons.md §25
-- §26 🔴 派工給沙盒代理：分工線是「誰有出口」，不是「誰比較聰明」（2026-08-09 實戰） → batching-and-measurement-lessons.md §26
-- §27 🔴 產線一律倒敘：資源不夠時，順序就是唯一決定成果價值的東西（2026-08-09 使用者裁定） → batching-and-measurement-lessons.md §27
-- §27.1 🔴 一個「還剩多少」的數字，不會告訴你「什麼時候補滿」（2026-08-10） → batching-and-measurement-lessons.md §27.1
-- §27.2 🔴 用來判斷「跑完了沒」的計數，也要綁自己的前綴（2026-08-10） → batching-and-measurement-lessons.md §27.2
-- §28 🔴 閘門守著有文件的那條路，忙碌的那條在旁邊跑（2026-08-13 實測） → batching-and-measurement-lessons.md §28
-- §29 🔴 把整列 dump 成字串再 regex，key 名與 id 會被當成內容（2026-08-19 實測） → batching-and-measurement-lessons.md §29
-- §30 覆蓋率與合規率是兩個數字，而只報一個會讓另一個消失（2026-08-23 實測） → batching-and-measurement-lessons.md §30
-- §31 產物只活在編排器的回傳值裡＝跑批成功而磁碟上什麼都沒有（2026-08-23 實測） → batching-and-measurement-lessons.md §31
-- §32 🔴 有硬限額時，賠掉的是**佇列深度**不是併發數（2026-08-23 實戰，一次判斷錯誤＋一次數字說錯換來的） → batching-and-measurement-lessons.md §32
+- batching-and-measurement-lessons.md §5：併發上限固定時，pipeline **不會**增加吞吐量（2026-08-01 實戰，一次判斷錯誤換來的）
+- batching-and-measurement-lessons.md §8：批次式併發的隱藏損失：每批都被最慢的那塊拖住（2026-08-01 實測）
+- batching-and-measurement-lessons.md §9：跑批進行中讀產出檔：旁觀者必須容忍半截檔（2026-08-01）
+- batching-and-measurement-lessons.md §10：🔴 有效 ≠ 完整：兩層閘門都不看題數，短塊會靜默蒸發（2026-08-01 實戰）
+- batching-and-measurement-lessons.md §11：收工停跑批：`pkill` 的作用域是整台機器（2026-08-02）
+- batching-and-measurement-lessons.md §15′：🔴 「該改的有沒有動」不等於「改對了」（2026-08-02，判分器讀反的第四例）
+- batching-and-measurement-lessons.md §16：`git rev-list --all` 包含 `refs/stash`（2026-08-02）
+- batching-and-measurement-lessons.md §17：接手檔要收攏成兩份，父計畫不可抄子線的數字（2026-08-02）
+- batching-and-measurement-lessons.md §18：多 session 下改 repo 名：push 會被重新導向到你不預期的地方（2026-08-02）
+- batching-and-measurement-lessons.md §19：🔴 「需人工改寫」常常是**操作選錯**，不是真的需要人腦（2026-08-02）
+- batching-and-measurement-lessons.md §20：🔴 修復器認不出結構時，會生出**比輸入更壞**的輸出（2026-08-02）
+- batching-and-measurement-lessons.md §22：🔴 回報一個數字之前，先確認它回答的是對方要決定的那件事（2026-08-07）
+- batching-and-measurement-lessons.md §24：🔴 冪等判準從來沒問過「這是誰的輸出」——前綴撞號會讓整塊靜默跳過（2026-08-09 實戰）
+- batching-and-measurement-lessons.md §25：🔴 配額快照沒有時效檢查：兩天前的 100% 與現在的 100% 完全同形（2026-08-09）
+- batching-and-measurement-lessons.md §26：🔴 派工給沙盒代理：分工線是「誰有出口」，不是「誰比較聰明」（2026-08-09 實戰）
+- batching-and-measurement-lessons.md §27：🔴 產線一律倒敘：資源不夠時，順序就是唯一決定成果價值的東西（2026-08-09 使用者裁定）
+- batching-and-measurement-lessons.md §27.1：🔴 一個「還剩多少」的數字，不會告訴你「什麼時候補滿」（2026-08-10）
+- batching-and-measurement-lessons.md §27.2：🔴 用來判斷「跑完了沒」的計數，也要綁自己的前綴（2026-08-10）
+- batching-and-measurement-lessons.md §28：🔴 閘門守著有文件的那條路，忙碌的那條在旁邊跑（2026-08-13 實測）
+- batching-and-measurement-lessons.md §29：🔴 把整列 dump 成字串再 regex，key 名與 id 會被當成內容（2026-08-19 實測）
+- batching-and-measurement-lessons.md §30：覆蓋率與合規率是兩個數字，而只報一個會讓另一個消失（2026-08-23 實測）
+- batching-and-measurement-lessons.md §31：產物只活在編排器的回傳值裡＝跑批成功而磁碟上什麼都沒有（2026-08-23 實測）
+- batching-and-measurement-lessons.md §32：🔴 有硬限額時，賠掉的是**佇列深度**不是併發數（2026-08-23 實戰，一次判斷錯誤＋一次數字說錯換來的）

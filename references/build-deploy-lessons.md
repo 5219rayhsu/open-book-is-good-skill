@@ -357,7 +357,7 @@ await Promise.all(keys.map(k => caches.delete(k)));
 2. **適用範圍自己寫窄了。** 「何時用這個 skill」只列建置類情境（把試題變題庫、復刻、
    PDF 轉結構化）。照字面讀，**維運**（紅隊、修復站、上線）根本不在範圍內——
    而那正是系統長大以後 90% 的工作。
-3. **專案裡存在更近的操作正本。** 待辦清單、紅隊協定、規格書 §0 都比 skill 更具體、
+3. **專案裡存在更近的操作正本。** 待辦清單、紅隊協定、規格書 build-deploy.md §0 都比 skill 更具體、
    更可操作，從 agent 視角把 skill 的邊際價值吃光了。
 
 ### 量出來的修法（四支探針，known-good／known-bad 兩側）
@@ -491,7 +491,7 @@ seo_fresh_gate() {
 修法是把 `Disallow` 拿掉，改在 `_headers` 的 `/data/*` 那格加 `X-Robots-Tag: noindex`
 （Cloudflare Workers Assets 也吃 `_headers`，實測 `curl -I` 可見）。
 
-斷言怎麼被自己的註解騙過、怎麼修，正本在 gates.md §F′ 推論五；這裡只留產品層結論。
+斷言怎麼被自己的註解騙過、怎麼修，正本在 gates-lessons.md §F′ 推論五；這裡只留產品層結論。
 
 ---
 
@@ -626,7 +626,7 @@ var src = (window.__FIGS__ && window.__FIGS__[name]) || dataUrl('figures/' + nam
 12 科裡有 4 科（170 / 50 / 32 / 30 MB）直接過不去，另有一科 24.8 MB 貼著牆。
 **這道牆不能靠付費繞過**，只能換載體。
 
-所以 §4「離線單檔走 GitHub Release」不只是為了 git 不長胖，也是**唯一過得了 25 MiB 的路**
+所以 build-deploy.md §4「離線單檔走 GitHub Release」不只是為了 git 不長胖，也是**唯一過得了 25 MiB 的路**
 （Release 單檔上限 2 GB）。附帶兩個實務點：
 
 - **資產檔名用純 ASCII**：GitHub 會把 Release 資產名裡非 `[A-Za-z0-9._-]` 的字元換掉，

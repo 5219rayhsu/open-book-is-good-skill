@@ -843,13 +843,13 @@ B、C、D 是被**稱讚**的，問題只在正解段。但零 token 定位器�
 
 ## 教訓索引（已搬至 explanations-redteam-lessons.md）
 
-- §5.4 修正腳本的 `\s` 會吃換行——一行 regex 壓掉 21 則的三段結構（2026-08-09） → explanations-redteam-lessons.md §5.4
+- explanations-redteam-lessons.md §5.4：修正腳本的 `\s` 會吃換行——一行 regex 壓掉 21 則的三段結構（2026-08-09）
 - 9. 長跑運維坑（跨模型大批量紅隊的實戰教訓） → explanations-redteam-lessons.md §9
 - 11. 併庫驗收的三個陷阱（2026-07-30，各踩過一次） → explanations-redteam-lessons.md §11
 - 12. 提早驗格式：先看 fail 的**分佈**，再決定要修 opcard 還是修一塊（2026-08-01） → explanations-redteam-lessons.md §12
-- §14 R 線重構的保真條款：不寫的話事實保留率只有 43%（2026-08-02 實測） → explanations-redteam-lessons.md §14
-- §15 🔴 產線缺陷：生成站的內部欄位會漏進學生正文（2026-08-06） → explanations-redteam-lessons.md §15
-- §16 一個 prefix 一波，永遠不要在舊 prefix 上重跑切塊 → explanations-redteam-lessons.md §16
-- §17 重生成會丟掉修復；每一批重生成都要自己再走一次紅隊與修復站（2026-08-18 實測） → explanations-redteam-lessons.md §17
-- §18 補救腳本回報「0 則」時，先分辨是「沒事」還是「沒認出來」（2026-08-18 實測） → explanations-redteam-lessons.md §18
-- §19 操作卡的兩個靜默缺陷（2026-08-23，同一張卡上同時中兩個） → explanations-redteam-lessons.md §19
+- explanations-redteam-lessons.md §14：R 線重構的保真條款：不寫的話事實保留率只有 43%（2026-08-02 實測）
+- explanations-redteam-lessons.md §15：🔴 產線缺陷：生成站的內部欄位會漏進學生正文（2026-08-06）
+- explanations-redteam-lessons.md §16：一個 prefix 一波，永遠不要在舊 prefix 上重跑切塊
+- explanations-redteam-lessons.md §17：重生成會丟掉修復；每一批重生成都要自己再走一次紅隊與修復站（2026-08-18 實測）
+- explanations-redteam-lessons.md §18：補救腳本回報「0 則」時，先分辨是「沒事」還是「沒認出來」（2026-08-18 實測）
+- explanations-redteam-lessons.md §19：操作卡的兩個靜默缺陷（2026-08-23，同一張卡上同時中兩個）
