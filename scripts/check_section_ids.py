@@ -25,9 +25,29 @@ import sys
 # 「§」與句點都只是裝飾，`24` 才是識別字；`24.1` 與 `§A1` 是子節，不是重複。
 SEC = re.compile(r"^## §?(\d+|[A-Z])(?:\.(?=\s)|(?=\s))", re.M)
 
+# `### ` id 只在同一個 `## ` 父節底下才算重複——`## 1.` 底下的 `### 1.1` 跟
+# `## 2.` 底下的 `### 1.1` 是不同東西，key 要帶父節號。子節只認 `數字.數字` 形式
+# （21.5 這種），不含字母子節（那種目前沒有真實案例，YAGNI）。
+SUBSEC = re.compile(r"^### (\d+\.\d+)\b", re.M)
+
 
 def dupes(text: str) -> list[str]:
     return sorted(f"{k} ×{n}" for k, n in collections.Counter(SEC.findall(text)).items() if n > 1)
+
+
+def sub_dupes(text: str) -> list[str]:
+    parent = None
+    counts: collections.Counter = collections.Counter()
+    for line in text.splitlines():
+        m = SEC.match(line)
+        if m:
+            parent = m.group(1)
+            continue
+        m2 = SUBSEC.match(line)
+        if m2:
+            counts[(parent, m2.group(1))] += 1
+    return sorted(f"{sub} ×{n} (under ## {parent}.)"
+                  for (parent, sub), n in counts.items() if n > 1)
 
 
 def selftest() -> None:
@@ -44,7 +64,11 @@ def selftest() -> None:
     assert dupes("## 24. a\n## 24.1 b\n") == []
     # 內文提到 §H 不算節（必須行首 `## `）
     assert dupes("## §H a\n見 §H 那節\n") == []
-    print("=== check_section_ids selftest PASS（9 案例）===")
+    # ### 子節撞號：同一父節下重複才算
+    assert sub_dupes("## 21. a\n### 21.5 x\n### 21.5 y\n") == ["21.5 ×2 (under ## 21.)"]
+    # 不同父節底下的同號子節不算重複
+    assert sub_dupes("## 1. a\n### 1.1 x\n## 2. b\n### 1.1 y\n") == []
+    print("=== check_section_ids selftest PASS（11 案例）===")
 
 
 if __name__ == "__main__":
@@ -54,7 +78,8 @@ if __name__ == "__main__":
                         pathlib.Path(__file__).resolve().parent.parent / "references")
     bad = 0
     for f in sorted(root.glob("*.md")):
-        d = dupes(f.read_text())
+        text = f.read_text()
+        d = dupes(text) + sub_dupes(text)
         if d:
             bad += 1
             print(f"🔴 {f.name}: 節號重複 {', '.join(d)}")
