@@ -36,6 +36,13 @@ BROWSER_USER_AGENT = (
 )
 
 # Pcodes are stable identifiers looked up once from the official database.
+#
+# 🔴 補法的排序依據是**詳解裡實際引用的筆數**，不是 ref 層關鍵字的出現次數。
+# 實測 2026-08-18 兩者幾乎不相關：個人資料保護法在社工 ref 層出現 12 次、
+# 詳解引用 0 筆；特殊境遇家庭扶助條例在 ref 層一次都沒出現、詳解引用 28 筆。
+# 錨定包存在的理由是查核詳解的條號，所以需求量要往詳解量，不往 ref 量。
+# 引用 0 筆的法不補（YAGNI）——包會變大，而變大的部分永遠不會被查到。
+# 重跑量測：scripts 見 progress_log 2026-08-18 該日條目。
 EXAM_LAWS: dict[str, tuple[tuple[str, str], ...]] = {
     "social-worker": (
         ("社會工作師法", "D0050125"),
@@ -48,6 +55,21 @@ EXAM_LAWS: dict[str, tuple[tuple[str, str], ...]] = {
         ("精神衛生法", "L0020030"),
         ("長期照顧服務法", "L0070040"),
         ("國民年金法", "D0050152"),
+        # 以下 2026-08-18 依詳解引用筆數補入（括號為實測筆數）
+        ("公益勸募條例", "D0050138"),                    # 34
+        ("特殊境遇家庭扶助條例", "D0050075"),            # 28
+        ("性侵害犯罪防治法", "D0080079"),                # 17
+        ("民法", "B0000001"),                            # 15
+        ("兒童及少年性剝削防制條例", "D0050023"),        # 14
+        ("就業保險法", "N0050021"),                      # 11
+        ("全民健康保險法", "L0060001"),                  # 5
+        ("勞工保險條例", "N0050001"),                    # 4
+        ("中華民國刑法", "C0000001"),                    # 4（詳解寫「刑法」，靠 LAW_ALIASES 對上）
+        ("少年事件處理法", "C0010011"),                  # 3
+        ("身心障礙者權利公約施行法", "D0050194"),        # 3
+        ("人民團體法", "D0050091"),                      # 2
+        ("消除對婦女一切形式歧視公約施行法", "D0050175"),  # 2
+        ("住宅法", "D0070195"),                          # 1
     ),
     "lawyer": (
         ("中華民國憲法增修條文", "A0000002"),
@@ -67,6 +89,11 @@ EXAM_LAWS: dict[str, tuple[tuple[str, str], ...]] = {
         ("家事事件法", "B0010048"),
         ("憲法訴訟法", "A0030159"),
         ("票據法", "G0380028"),
+        # 以下 2026-08-18 依詳解引用筆數補入
+        ("保險法", "G0390002"),                          # 146（其中 2 筆實為全民健康保險法，由冒名者守衛剔除）
+        ("行政罰法", "A0030210"),                        # 19
+        ("土地法", "D0060001"),                          # 14
+        ("海商法", "K0070002"),                          # 1
     ),
     # cpa 只有「稅務法規」會引法條（實測 94 處引用集中於此科；審計學／中級會計學的
     # 「權益法／加權平均法／測試資料法」是方法名不是法規，無從錨定）。pcode 皆以
@@ -79,6 +106,7 @@ EXAM_LAWS: dict[str, tuple[tuple[str, str], ...]] = {
         ("土地稅法", "G0340096"),
         ("所得基本稅額條例", "G0340115"),
         ("納稅者權利保護法", "G0340142"),
+        ("公司法", "J0080001"),                          # 1（2026-08-18 補）
     ),
 }
 
@@ -116,6 +144,43 @@ ARTICLE_REF_RE = re.compile(
 # 法名後若緊接其他漢字（「票據法律關係」「公司法人」「所得稅法施行細則」），代表那是更長的
 # 詞或另一部法，不是本法的引用；只有「第」（第N條）或非漢字才算真引用邊界。
 LAW_NAME_TAIL_OK = re.compile(r"^(?:第|[^一-鿿]|$)")
+# 俗名 → 註冊表裡的官方全名。詳解寫「刑法第 271 條」，註冊表寫「中華民國刑法」，
+# 字面對不上就**整批看不見**——不是 fail，是連被檢查的機會都沒有。
+# 實測 2026-08-18（律師科 3,408 則詳解）：現行看得見 6,476 筆，俗名另有 1,741 筆
+# （刑法 1,418／憲法 230／憲法增修條文 93）＝ 全部引用的 21% 落在盲區裡，
+# 而 --verify 印的是「0 fail」。看不見比看得見的錯貴，因為錯誤數是未知的。
+LAW_ALIASES: dict[str, str] = {
+    "刑法": "中華民國刑法",
+    "憲法": "中華民國憲法",
+    "憲法增修條文": "中華民國憲法增修條文",
+    "刑訴法": "刑事訴訟法",
+    "民訴法": "民事訴訟法",
+    "證交法": "證券交易法",
+    "性別工作平等法": "性別平等工作法",   # 2023 更名，舊名仍大量出現
+}
+# 以某個註冊法名／俗名**結尾、但其實是別部法**的全名。它們必須一起被搜出來，否則
+# 「陸海空軍刑法第 76 條」會被當成「中華民國刑法第 76 條」——把 A 法的條號掛到 B 法，
+# 比看不見更糟：它會印出一個看起來合法的判定。實測律師科 146 筆「保險法第…」裡，
+# 有 2 筆其實是全民健康保險法。
+# 🔴 冒名者身分是**逐科**的：全民健康保險法對社工是註冊法規、對律師才是冒名者，
+# 所以這裡列全集，由 citationSurfaces() 依當科註冊表現場排除。
+# 清單由法務部全量 dump 反查 `endswith(surface) and len>len(surface)` 產生；
+# 改動 EXAM_LAWS 或 LAW_ALIASES 後要重跑那個反查（見 progress_log 2026-08-18）。
+ALIAS_IMPOSTORS: tuple[str, ...] = (
+    "中華民國刑法",
+    "中華民國憲法",
+    "中華民國憲法增修條文",
+    "入出國及移民法",
+    "全民健康保險法",
+    "公教人員保險法",
+    "就業保險法",
+    "強制汽車責任保險法",
+    "監獄行刑法",
+    "簡易人壽保險法",
+    "農業保險法",
+    "金融控股公司法",
+    "陸海空軍刑法",
+)
 # 「條之N」不一定是子條號——「之」也可能是「的」：
 #   第22條之3年時效  ＝ 第22條「的」3年時效（不是第22-3條）
 #   第305條之兩造同意 ＝ 第305條「的」兩造同意（「兩」還剛好是中文數字）
@@ -390,8 +455,92 @@ def buildPack() -> int:
     return 0
 
 
+COMMENCEMENT_UNDETERMINED = "99991231"
+COMMENCEMENT_SOON_DAYS = 30
+
+
+def dumpUpdateDay(entry: dict[str, Any]) -> str | None:
+    """`_dump_update_date`「2026/8/7 上午 12:00:00」→「20260807」；認不出就 None。"""
+    raw = entry.get("_dump_update_date")
+    if not isinstance(raw, str):
+        return None
+    match = re.match(r"\s*(\d{4})/(\d{1,2})/(\d{1,2})", raw)
+    if not match:
+        return None
+    return f"{match.group(1)}{int(match.group(2)):02d}{int(match.group(3)):02d}"
+
+
+def checkCommencement(pack: dict[str, Any], today: str) -> dict[str, list[str]]:
+    """延後施行的條文：修正日期比對看不見的那一類過期。
+
+    WHY 這道檢查非得存在：`--check` 比的是「修正日期」，而**延後施行的條文在生效那天
+    修正日期一個字都不會動**。實測精神衛生法第五章與家事事件法第 3、96、185 條都在
+    2026-08-01 生效，兩部的 `LawModifiedDate` 都停在民國 111 年。詳解寫「本條尚未施行」
+    在 7/31 是對的、8/1 就是錯的，而日期比對從頭到尾都說「最新」。
+
+    三種情況分開，因為處置相反：
+      stale        施行日已到，但**包比施行日還舊** → 真過期，要重建（exit 2）。
+      soon         施行日在未來 30 天內 → 提前通知，詳解該預先改寫。
+      pending      施行日在更遠的未來 → 只記錄。
+      undetermined 99991231＝由行政院另定，無限期懸置 → 包裡有**尚未生效的條文**，
+                   而 `--verify` 對它們一律印 ok。只記錄，不失敗：實測社工與律師詳解
+                   引用到這些條文的筆數是 0，為 0 筆的風險加閘門會變成永久紅燈。
+
+    刻意做成純函式（pack, today）→ findings：`--check` 要連網，這道不用，
+    所以它進得了 offline 的 --selftest。
+    """
+    found: dict[str, list[str]] = {"stale": [], "soon": [], "pending": [], "undetermined": []}
+    for name, entry in pack.items():
+        if not isinstance(entry, dict):
+            continue
+        eff = entry.get("effective_date")
+        if not isinstance(eff, str) or not eff:
+            continue
+        if eff == COMMENCEMENT_UNDETERMINED:
+            found["undetermined"].append(name)
+            continue
+        amend = (entry.get("amend_date") or "").replace("-", "")
+        builtOn = dumpUpdateDay(entry)
+        if eff > today:
+            delta = daysBetween(today, eff)
+            bucket = "soon" if delta is not None and delta <= COMMENCEMENT_SOON_DAYS else "pending"
+            found[bucket].append(f"{name} 於 {eff} 施行（{delta} 天後）")
+        elif amend and eff > amend and builtOn and eff > builtOn:
+            found["stale"].append(f"{name} 於 {eff} 施行，但包建於 {builtOn}（修正日 {amend} 未變）")
+    return found
+
+
+def daysBetween(start: str, end: str) -> int | None:
+    """兩個 YYYYMMDD 相差幾天；格式不對就 None（不猜、不拋）。"""
+    from datetime import date
+
+    try:
+        a = date(int(start[:4]), int(start[4:6]), int(start[6:8]))
+        b = date(int(end[:4]), int(end[4:6]), int(end[6:8]))
+    except (ValueError, IndexError):
+        return None
+    return (b - a).days
+
+
+def reportCommencement(pack: dict[str, Any], today: str) -> int:
+    """印出施行日檢查；stale 有東西就回 2。"""
+    found = checkCommencement(pack, today)
+    for label, items in (("stale", "🔴 延後施行已生效但包更舊，須重建"),
+                         ("soon", f"⚠️ {COMMENCEMENT_SOON_DAYS} 天內即將施行"),
+                         ("pending", "· 未來施行"),
+                         ("undetermined", "· 施行日由行政院另定（包內含尚未生效條文）")):
+        if found[label]:
+            print(f"{items}：")
+            for item in found[label]:
+                print(f"- {item}")
+    if not any(found.values()):
+        print("施行日檢查：無延後施行註記")
+    return 2 if found["stale"] else 0
+
+
 def checkPack() -> int:
     pack = loadPack()
+    commencement = reportCommencement(pack, time.strftime("%Y%m%d"))
     outdated: list[str] = []
     errors: list[str] = []
     for name, pcode in CORE_LAWS:
@@ -415,6 +564,11 @@ def checkPack() -> int:
         for item in outdated:
             print(f"- {item}")
         return 2
+    # 🔴 施行日檢查的結果必須進 exit code。月維護是看 exit code 決定要不要重建的，
+    # 一道只印紅字、卻回 0 的閘門，對呼叫它的流程來說等於沒跑。
+    if commencement:
+        print(f"{CURRENT_EXAM}: 修正日期全對，但施行日檢查未過（見上），須重建")
+        return commencement
     print(f"all {CURRENT_EXAM} anchor laws are up to date")
     return 0
 
@@ -481,13 +635,51 @@ def extractKeyNumbers(text: str) -> set[str]:
     return results
 
 
+def citationSurfaces(lawNames: Iterable[str]) -> list[tuple[str, str | None]]:
+    """要在文字裡搜的字面 → 它代表的註冊表法名（None ＝ 冒名者，搜出來只為了排除）。"""
+    registry = tuple(lawNames)
+    surfaces: list[tuple[str, str | None]] = [(name, name) for name in registry]
+    surfaces += [
+        (alias, canon) for alias, canon in LAW_ALIASES.items()
+        if canon in registry and alias not in registry
+    ]
+    # 冒名者只在「它會蓋住本科某個字面」時才需要搜；否則多搜一輪純浪費。
+    inUse = {surface for surface, canon in surfaces if canon is not None}
+    surfaces += [
+        (impostor, None) for impostor in ALIAS_IMPOSTORS
+        if impostor not in registry
+        and any(impostor.endswith(s) and len(impostor) > len(s) for s in inUse)
+    ]
+    return surfaces
+
+
+def dropContainedCitations(citations: list[Citation]) -> list[Citation]:
+    """跨越同一段文字的引用只留最長的那個。
+
+    一句「中華民國刑法第 271 條」會同時被全名與俗名「刑法」搜到；而
+    「陸海空軍刑法第 76 條」裡的俗名命中則要被冒名者整個吃掉。兩件事同一條規則：
+    **短的被長的包住就丟掉**，不管它們解析成哪一部法。
+    ponytail: O(n²)，n 是單一則詳解裡的引用數（實測個位數），不值得建區間樹。
+    """
+    return [
+        c for c in citations
+        if not any(
+            o is not c and o.start <= c.start and c.end <= o.end
+            and (o.end - o.start) > (c.end - c.start)
+            for o in citations
+        )
+    ]
+
+
 def extractCitations(text: str, lawNames: Iterable[str] | None = None) -> list[Citation]:
     lawNames = lawNames if lawNames is not None else LAW_NAMES
     normalized = unicodedata.normalize("NFKC", text)
     citations: list[Citation] = []
     seen: set[tuple[str, str, int]] = set()
-    for law in lawNames:
-        for lawMatch in re.finditer(re.escape(law), normalized):
+    surfaces = citationSurfaces(lawNames)
+    for surface, canonical in surfaces:
+        law = canonical if canonical is not None else surface
+        for lawMatch in re.finditer(re.escape(surface), normalized):
             if not LAW_NAME_TAIL_OK.match(normalized[lawMatch.end():lawMatch.end() + 1]):
                 continue                      # 「票據法律關係」「公司法人」「所得稅法施行細則」
             afterEnd = min(len(normalized), lawMatch.end() + 36)
@@ -496,6 +688,7 @@ def extractCitations(text: str, lawNames: Iterable[str] | None = None) -> list[C
             # 綁到後面出現的法名上（實證：「通保法第18條之1…適用刑事訴訟法」→ 刑訴第18-1條）。
             beforeStart = max(0, lawMatch.start() - 12)
             beforeMatches = [m for m in ARTICLE_REF_RE.finditer(normalized, beforeStart, lawMatch.start())]
+            backward = after is None
             candidates = [after] if after else beforeMatches[-1:]
             for refMatch in candidates:
                 if refMatch is None:
@@ -507,6 +700,11 @@ def extractCitations(text: str, lawNames: Iterable[str] | None = None) -> list[C
                     continue
                 if re.search(r"[一-鿿]{2,12}(?:法|條例|通則|規則)", between):
                     continue                  # 中間夾了另一部法名 → 這個條號不屬於本法
+                if backward and "、" in between:
+                    # 「家庭暴力防治法第 58 條、特殊境遇家庭扶助條例及…」——頓號是列舉分隔，
+                    # 58 屬於**前面**那部法。這個錯之前抓不到：特境條例沒註冊，
+                    # 連被誤配的機會都沒有。補了覆蓋率才讓解析器的 bug 浮出來。
+                    continue
                 sub = refMatch.group(2) or refMatch.group(3)
                 if sub and SUBARTICLE_FALSE_TAIL.match(normalized[refMatch.end():refMatch.end() + 4]):
                     sub = None            # 「之」是「的」，不是子條號
@@ -517,7 +715,9 @@ def extractCitations(text: str, lawNames: Iterable[str] | None = None) -> list[C
                 if identity not in seen:
                     citations.append(Citation(law, art, start, end))
                     seen.add(identity)
-    return sorted(citations, key=lambda citation: citation.start)
+    impostors = {surface for surface, canonical in surfaces if canonical is None}
+    kept = [c for c in dropContainedCitations(citations) if c.law not in impostors]
+    return sorted(kept, key=lambda citation: citation.start)
 
 
 def citationContext(text: str, citation: Citation) -> str:
@@ -703,6 +903,56 @@ def runSelftest() -> int:
                 "通保法第 18 條之 1 第 1 項規定，並非當然不得適用刑事訴訟法第 158-4 條",
                 ["刑事訴訟法"])] == [("刑事訴訟法", "158-4")],
         ),
+        (
+            "俗名解析成官方全名（詳解寫「刑法」，註冊表寫「中華民國刑法」）",
+            [(c.law, c.art) for c in extractCitations(
+                "行為該當刑法第 271 條第 1 項殺人罪",
+                ["中華民國刑法"])] == [("中華民國刑法", "271")],
+        ),
+        (
+            "全名與俗名同時命中同一段，只留一筆",
+            [(c.law, c.art) for c in extractCitations(
+                "依中華民國刑法第 271 條", ["中華民國刑法"])] == [("中華民國刑法", "271")],
+        ),
+        (
+            "冒名者吃掉俗名：陸海空軍刑法不得掛到中華民國刑法",
+            extractCitations("違反陸海空軍刑法第 76 條", ["中華民國刑法"]) == [],
+        ),
+        (
+            "憲法訴訟法不被俗名「憲法」吃掉（尾字守衛）",
+            [(c.law, c.art) for c in extractCitations(
+                "依憲法訴訟法第 59 條聲請", ["中華民國憲法", "憲法訴訟法"])]
+            == [("憲法訴訟法", "59")],
+        ),
+        (
+            "俗名的 canonical 不在本科註冊表時不得憑空生出引用",
+            extractCitations("刑法第 271 條", ["社會工作師法"]) == [],
+        ),
+        (
+            "註冊法名本身也會被冒名：律師科的「保險法」不得吃下全民健康保險法",
+            extractCitations("依全民健康保險法第 51 條", ["保險法"]) == [],
+        ),
+        (
+            "列舉頓號後的法名不得反向撿走前一部法的條號",
+            [(c.law, c.art) for c in extractCitations(
+                "家庭暴力防治法第 58 條、特殊境遇家庭扶助條例及身心障礙者權益保障法均有規定",
+                ["家庭暴力防治法", "特殊境遇家庭扶助條例", "身心障礙者權益保障法"])]
+            == [("家庭暴力防治法", "58")],
+        ),
+        (
+            # 頓號守衛只擋列舉，不得把合法的反向引用一起殺掉。
+            # （法名後接漢字仍由既有的尾字守衛擋，與本條無關。）
+            "真正的反向引用（緊鄰、無頓號）仍要採計",
+            [(c.law, c.art) for c in extractCitations(
+                "違反第 271 條（中華民國刑法）", ["中華民國刑法"])]
+            == [("中華民國刑法", "271")],
+        ),
+        (
+            "同一個名字在別科是註冊法規時仍照常認得（社工的全民健康保險法）",
+            [(c.law, c.art) for c in extractCitations(
+                "依全民健康保險法第 51 條", ["全民健康保險法"])]
+            == [("全民健康保險法", "51")],
+        ),
     ]
     # 舊條號引用（2026-08-01 月維護實測：律師法第 37-1 條為 103 年命題當時條號，
     # 詳解已標明現行為第 28 條，判 fail 是誤報）
@@ -742,6 +992,43 @@ def runSelftest() -> int:
             ("ok decision", okRef["status"] == "ok"),
             ("fail decision", failRef["status"] == "fail"),
             ("flag decision", flagRef["status"] == "flag"),
+        ]
+    )
+    # --- 施行日閘：修正日期比對看不見的那一類過期（純函式，離線可測）---
+    commencementPack = {
+        "已施行但包更舊": {"effective_date": "20260801", "amend_date": "2022-12-14",
+                           "_dump_update_date": "2026/7/10 上午 12:00:00"},
+        "施行後才重建的": {"effective_date": "20260801", "amend_date": "2022-12-14",
+                           "_dump_update_date": "2026/8/7 上午 12:00:00"},
+        "三十天內施行": {"effective_date": "20260901", "amend_date": "2026-01-01",
+                         "_dump_update_date": "2026/8/7 上午 12:00:00"},
+        "更遠的未來施行": {"effective_date": "20270901", "amend_date": "2026-01-01",
+                           "_dump_update_date": "2026/8/7 上午 12:00:00"},
+        "由行政院另定": {"effective_date": "99991231", "amend_date": "2026-01-01",
+                         "_dump_update_date": "2026/8/7 上午 12:00:00"},
+        "沒有生效註記": {"amend_date": "2026-01-01", "_dump_update_date": "2026/8/7 上午 12:00:00"},
+    }
+    commencementFound = checkCommencement(commencementPack, "20260819")
+    quietFound = checkCommencement({"沒有生效註記": commencementPack["沒有生效註記"]}, "20260819")
+    tests.extend(
+        [
+            ("施行日已到而包更舊＝stale", commencementFound["stale"] == ["已施行但包更舊 於 20260801 施行，但包建於 20260710（修正日 20221214 未變）"]),
+            ("🔴 施行日之後才重建的包不算 stale（重建過就該閉嘴，否則永久紅燈）",
+             not any("施行後才重建的" in item for item in commencementFound["stale"])),
+            ("30 天內施行進 soon", [i.split(" 於")[0] for i in commencementFound["soon"]] == ["三十天內施行"]),
+            ("更遠的未來進 pending", [i.split(" 於")[0] for i in commencementFound["pending"]] == ["更遠的未來施行"]),
+            ("99991231 進 undetermined 而不是 stale",
+             commencementFound["undetermined"] == ["由行政院另定"]
+             and not any("由行政院另定" in i for i in commencementFound["stale"])),
+            ("沒有 effective_date 的法一句都不報（不製造雜訊）",
+             not any(quietFound.values())),
+            ("_dump_update_date 的中文日期解析得出來",
+             dumpUpdateDay({"_dump_update_date": "2026/8/7 上午 12:00:00"}) == "20260807"
+             and dumpUpdateDay({"_dump_update_date": "壞掉的"}) is None
+             and dumpUpdateDay({}) is None),
+            ("🔴 stale 要回 2、無 stale 要回 0（回傳值進得了 checkPack 的 exit code）",
+             reportCommencement(commencementPack, "20260819") == 2
+             and reportCommencement({"沒有生效註記": commencementPack["沒有生效註記"]}, "20260819") == 0),
         ]
     )
     for name, passed in tests:
