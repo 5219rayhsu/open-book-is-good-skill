@@ -700,16 +700,7 @@ seo_fresh_gate() {
 修法是把 `Disallow` 拿掉，改在 `_headers` 的 `/data/*` 那格加 `X-Robots-Tag: noindex`
 （Cloudflare Workers Assets 也吃 `_headers`，實測 `curl -I` 可見）。
 
-**閘門是一條跨檔一致性斷言**，寫在生成器的 selftest 裡：
-
-```python
-rb_rules = [ln.split("#")[0].strip() for ln in render_robots().splitlines()]
-assert "/data/" in render_llms(...)                       # llms 有指路
-assert not any(r.lower().startswith("disallow") and "/data/" in r for r in rb_rules)
-```
-
-**可搬走的判準**：兩份給機器讀的檔案若指涉同一個路徑，它們必須被**同一道斷言**
-同時讀過一次。分別檢查兩份各自合法，永遠驗不出「合起來不可能同時遵守」。
+斷言怎麼被自己的註解騙過、怎麼修，正本在 gates.md §F′ 推論五；這裡只留產品層結論。
 
 ---
 
