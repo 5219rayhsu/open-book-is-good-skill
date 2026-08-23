@@ -46,6 +46,7 @@ description: 考古題自學系統（官方開放試題→題庫→詳解→上�
 > ＋本清單一行」，不得停留在散文；不可機檢者至少升級為**產物形狀要求**（缺了看得見）。
 > 散文規則要生效得先被想起來，而重犯正是「想不起來」的證據——同一條規則重犯 N 次，
 > 不是 N 次注意力失敗，是它**在錯誤的形態裡待了 N 次**。
+> 畢業後的教訓**留在 `*-lessons.md` 原節**，只在節首加一行「已升級：<腳本名>」——證據不搬家，閘門才查得到來歷。
 
 ---
 
@@ -75,7 +76,10 @@ description: 考古題自學系統（官方開放試題→題庫→詳解→上�
 | 四道門的證據與程式 | `gates.md` | — |
 
 **每份 reference 開頭都有目錄（超過百行者）——用節名搜尋，不要從頭讀。**
-最大的三份是 `parsing.md`、`batching-and-measurement.md`、`explanations-redteam.md`。
+**方法與教訓分檔**（2026-08-23 起，比照官方 progressive-disclosure Pattern 2）：`X.md` 是方法正本、
+`X-lessons.md` 是同主題的踩坑日誌，**節號沿用、永不重編**——查方法讀 `X.md`，查「這個坑踩過沒」
+讀 `X-lessons.md`，新教訓追加在 lessons 檔尾。兩支零 token 閘守這套結構：`scripts/check_section_ids.py`
+（節號撞號）、`scripts/check_section_refs.py`（`§` 引用斷鏈）——改完 references 就跑。
 常用定位：
 
 ```bash
