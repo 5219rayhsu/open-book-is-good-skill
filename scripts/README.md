@@ -20,6 +20,9 @@
 | `law_impact.py` | 6 詳解 | 月維護：比對修法前後的素材包，列出引用到異動條號的**已上線**詳解 qid。 |
 | `build_app.py` | 7 build | 把題庫＋圖＋前端打包成單檔 HTML（base64 只在 build 期內嵌，絕不進對話／stdout）。 |
 | `arm_parity.py` | 跨階段 | **實驗臂等價登記簿**：跨模型／跨供應商比較時，啟動端 `record()` 記下真正送出去那串字的雜湊，判分器 `assert_parity()` 不一致就拋錯、**查無紀錄＝失敗**。純標準庫、自帶六方向自檢。見 `references/batching-and-measurement.md` §15。 |
+| `prove_gate.py` | 跨階段 | 證明一條 selftest 斷言**真的會擋**：把「故意弄壞、看閘門攔不攔」的反向驗證變成一行指令。見 `references/gates.md`。 |
+| `check_section_ids.py` | 文件 | 掃 `references/*.md` 的 `##`／`###` 節號撞號（同一天撞兩次後升級成機器閘）。 |
+| `skill_trigger_lint.py` | 文件 | 驗 skill 的 `description` 上有沒有任務的觸發字（零 token）。見 `references/build-deploy.md` skill 觸發面一節。 |
 
 其餘未收錄的腳本（各科 parser、整題 render、答案鍵解析、題庫拆小檔＋schema＋CI 等）
 同屬這條管線；需要時依同樣 judgment 原則撰寫。授權 MIT。
