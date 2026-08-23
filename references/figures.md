@@ -131,12 +131,40 @@ MATRIX = fitz.Matrix(ZOOM, ZOOM)
 
 ### 檔名規則（跨科一致、含年份與科目）
 
-| 類型 | 學測 | 會考 |
-| --- | --- | --- |
-| 獨立題 | `{簡碼}{year}_q{no}.png`（例 `S114_q24.png`） | `C{年}_{科}_q{no}.png`（例 `C111_國文_q1.png`） |
-| 題組 | `{簡碼}{year}_g{首}_{末}.png`（例 `S114_g31_32.png`） | `C{年}_{科}_g{首}_{末}.png`（例 `C111_社會_g44_45.png`） |
+> **本節是命名規則的正本**（`data-sources.md` 只留指標）。2026-08-23 用 `bank.json` 的
+> `figure` 欄逐筆量過：舊版寫的 `S114_q24.png`／`C111_國文_q1.png` 這種「簡碼＋年份」
+> 命名，**在實際題庫裡一張都沒有**（gsat 219 個不同檔名、cap 402 個，符合舊規則者 0）。
+> 檔名不是規範出來的，是**產出它的那支腳本決定的**，所以實際上有三個家族並存。
 
-學測簡碼：社會 `S`、國綜 `G`、英文 `E`。題組區間取該 group 全部成員的 min~max 題號（忠實：共用同一張圖），group 內所有 `needs_figure` 子題的 `figure` 欄都指向這張。
+**量測結果（2026-08-23，數字＝不同檔名數／該庫全部不同檔名）：**
+
+| 家族 | 樣式 | 實例 | gsat | 會考 cap |
+| --- | --- | --- | --- | --- |
+| **A 原始渲染名（主力）** | `{PDF stem}_p{頁}_q{題}_{序}.png` | `111_社會_試題_p6_q24_0.png`／`111_會考國文_試題_p1_q1_0.png` | 166／219 | 311／402 |
+| **B 管線批次名** | `{exam}_{科}_{年}_p{頁}_{圖\|表}{編號}_{序}.png` | `gsat_社會_111_p4_圖3_0.png`／`cap_社會_111_p1_圖二_2.png` | 41／219 | 46／402 |
+| **B′ 定位批次名** | `{exam}_{科}_{年}_pos_p{頁}_q{題}_{序}.png` | `gsat_社會_112_pos_p9_q36_0.png` | 5／219 | 22／402 |
+| **C 單點補抽／重裁** | 前三者以外的手工名 | `113_國綜_15_sidebox.png`、`115_英文_38_figopt.png`、`112_會考自然_試題_g47_48_passage.png`、`cap_社會_111_圖十四_re.png` | 7／219 | 23／402 |
+
+- **A 的 `{PDF stem}`＝原卷 PDF 檔名去副檔名**：學測 `{年}_{科}_試題`、會考 `{年}_會考{科}_試題`
+  （科名含「會考」二字，不是分開的欄位）。產生處：`extract_figures_smart.py:222`
+  與 `_build_features/figdet_extract.py:57`，兩者同一行式 `f"{tag}_p{pno}_q{qno}_{k}.png"`，
+  `tag` 取 `os.path.basename(pdf)` 的 stem。
+- **B／B′ 出自 skill `exam-pdf-asset-extractor` 的 `figdet_v3.py`**：命名在
+  `~/.claude/skills/exam-pdf-asset-extractor/scripts/figdet_v3.py:325`
+  （`fn = f"{tag}_p{a['page']}_q{a.get('question')}_{a['kind']}_{i}.png"`），`tag` 在同檔
+  `:355` 組成 `f"{a.exam}_{a.subject}_{a.year}"`。落到 bank 的檔名是該 manifest 的
+  `output` 欄被 wire 回 `figure`；`圖3`／`表5`／`圖二` 這段來自圖說標籤、`pos` 來自定位批次的
+  `tag` 後綴（**讀碼推得，未逐張回溯批次紀錄**）。
+- 🔴 **頁碼基準兩家不同（讀碼推得）**：A 家族的 `p{頁}` 來自 `range(len(doc))`，**0-indexed**；
+  B 家族的 `a["page"]` 在 `render_assets` 裡以 `doc[a["page"] - 1]` 取頁，**1-indexed**。
+  拿檔名回推原卷頁碼時先看是哪一族，否則差一頁。
+- **C 是修復站與補抽留下的**：`_figopt`（圖片選項重裁）、`_sidebox`（補充框）、
+  `_passage`／`_all`（題組整塊）、`_poster`、`_re`（重裁）、`_fig`
+  （`_build_features/recover_missing_figures.py:482` 的 `f"{qid}_fig.png"`）。
+  它們是既成事實，**不要為了「統一」去改名**——`figure` 欄是唯一指標，改名等於斷鏈。
+- **題組共用圖**：group 內所有 `needs_figure` 子題的 `figure` 欄都指向同一張。少數以
+  `g{首}_{末}` 命名的（實測只有會考自然 4 張，如 `112_會考自然_試題_g47_48_passage.png`），
+  區間取該 group 全部成員題號的 **min~max**（忠實：共用同一張圖）。
 
 #### 🔴 檔名裡的「圖 N」不是證據，裁切位置才是（2026-07-31 實戰）
 

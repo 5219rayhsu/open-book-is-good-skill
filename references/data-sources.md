@@ -272,11 +272,8 @@ uv run --with requests python scripts/fetch_cap.py
 
 ### 圖檔命名（由 extract_figures 寫回 figure 欄）
 
-- 學測：獨立題 `S{年}_{科}_q{no}.png`、題組 `G{年}_{科}_g{首}_{末}.png`
-  （由 `extract_figures.py` 產生）。
-- 會考：獨立題 `C{年}_{科}_q{no}.png`、題組 `C{年}_{科}_g{首}_{末}.png`
-  （由 `extract_figures_cap.py` 產生）。題組區間取該 group 全部成員題號的 min~max；
-  group 內所有 `needs_figure` 子題的 `figure` 欄都指向同一張圖。
+命名規則的正本在 `figures.md` §三「檔名規則」（在「band 邊界怎麼決定」節內）；這裡不再重述
+（2026-08-23 發現兩份各寫一套、而且都與實際 bank 不符）。
 
 ---
 
