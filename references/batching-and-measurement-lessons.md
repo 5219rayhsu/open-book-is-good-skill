@@ -1277,6 +1277,6 @@ LOOP_PLAN 只看得見前者，因為量後者的工具從沒被跑起來看過�
 **③ 兩種欄名完全不同的 ref 併進同一個檔，JSON 不會抱怨。**
 `OPCARD_cpa215.md` §4 要求 `{qid,outline,c,sources_used,uncertain}`，目的地
 `essays.json` 的 `ref` 是 `{summary,frame,keywords,pitfalls,confidence,
-needs_verification}`——沒有一個欄名相同。§3 原句與被紅隊診斷為病因的產物字句
-一字不差，要修的是卡不是產物。篇數 215→**204**（11 篇國文作文依 skill §7.1
-排除代寫）。
+needs_verification}`——沒有一個欄名相同。`OPCARD_cpa215.md` 第 3 節的原句與被紅隊診斷為病因的產物字句
+一字不差，要修的是卡不是產物。篇數 215→**204**（11 篇國文作文依
+`explanations-redteam.md` §7 作文政策排除代寫）。

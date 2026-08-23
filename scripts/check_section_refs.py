@@ -40,7 +40,11 @@ import re
 import sys
 
 NUM = r"\d+(?:\.\d+)*[a-z]?[′″]?"          # 24 / 21.7 / 12′ / 2.1a / 3.0.1
-ALPHA = r"[A-Z]\d*[′″]?"                    # H / A3 / F′
+ALPHA = r"[A-Z]{1,2}\d*[′″]?"               # H / A3 / F′ / AA
+# 🔴 原本寫 `[A-Z]`（單字母）。字母用到 Y 之後就會有人鑄 §AA——而**雙字母 id 的
+# 標題整個匹配不到**，於是指向它的引用一律回報「查無此節」，指向 §A 這種不存在的 id。
+# 這正是 gates-lessons §Y 自己寫的那條：id 空間的形狀要從真實檔案枚舉，不要假設。
+# 枚舉指令：rg -oh '^#{2,3} §?[0-9A-Z.′″]*' references/ | sort -u
 CJK = r"[一二三四五六七八九十百千萬]+"        # 四
 ID = rf"(?:{NUM}|{ALPHA}|{CJK})"
 
@@ -176,6 +180,15 @@ def selftest() -> None:
         # 裸 CJK 數字（無 §）只是散文用字，不可誤配成節號引用
         b.write_text("見 `a.md` 是同一條律\n")
         assert scan_file(b, {"a.md": heading_ids(a.read_text())}) == []
+        # 🔴 雙字母 id（§AA）：字母用到 Y 之後就會出現。單字母正則會讓
+        # **標題本身匹配不到**，於是指向它的引用全部回報「查無此節」。
+        aa = root / "references" / "aa.md"
+        aa.write_text("## §AA 兩個字母的節\n\n## §AB 另一節\n")
+        b.write_text("見 `aa.md` §AA 與 `aa.md` §AB。\n")
+        assert scan_file(b, {"aa.md": heading_ids(aa.read_text())}) == [], "雙字母 id 誤報"
+        b.write_text("見 `aa.md` §AZ。\n")
+        assert len(scan_file(b, {"aa.md": heading_ids(aa.read_text())})) == 1, "雙字母真斷鏈沒抓到"
+
     print("=== check_section_refs selftest PASS（12 案例）===")
 
 
