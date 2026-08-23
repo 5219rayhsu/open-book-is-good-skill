@@ -213,7 +213,7 @@ python3 scripts/build_app.py
 | **skill repo 的 `README.md`** | 逛 GitHub 的人 | 門面：這 skill 是什麼、怎麼裝、怎麼用、授權。 |
 | **產物／專案 `README.md`** | 大眾／貢獻者 | **理念 ＋ 如何貢獻**——對社群參與最重要，但最常被漏掉。 |
 
-## 教訓索引（已搬至 X-lessons.md）
+## 教訓索引（已搬至 build-deploy-lessons.md）
 - build-deploy-lessons.md §7：發佈時清單裡有別人改的檔：推之前要自己驗（2026-08-02）
 - build-deploy-lessons.md §8：`.gitignore` 的 `*.bak*` 擋不到**目錄名**（2026-08-02）
 - build-deploy-lessons.md §9：發佈閘門本身要有版本控管（2026-08-02）
