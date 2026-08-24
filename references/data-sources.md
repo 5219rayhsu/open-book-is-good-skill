@@ -212,6 +212,15 @@ uv run --with requests python scripts/fetch_cap.py
 `build()` 注入每一站（含稽核站）。理由見 `explanations-redteam-lessons.md` §clean-room
 條款的 12 分之 2。
 
+🔴 **語料庫天花板還有第二條：只有「現行」法。** 2026-08-24 實測——
+化粧品衛生管理條例 2018 年廢止、由化粧品衛生安全管理法取代，而 106 年的考題當時它仍有效。
+用 law_name 去查現行語料會回 `not resolvable`，**舊年度考題引用的舊法無法逐字比對**。
+`tw_statute_at_date` 能做時光機，但只涵蓋 22 部 pilot 法規，藥事法系不在內。
+所以查證結果要分四類，不能只分「對／錯」：`match`／`mismatch`／
+**`out_of_corpus`（子法或已廢止法）**／**`undetermined`（配額用罄或搜不到）**。
+🔴 後兩類**必須與 mismatch 分開**：把「查不到」寫成「沒問題」，等於把清潔室的保證
+換成沉默；而把「配額用罄」寫成「查無此條」，會讓人以為那條法不存在。
+
 ### 3.3 授權：三層，各有各的理由
 
 方法與程式碼（scripts、引擎）採 **MIT**；題目資料依著作權法 §9 屬公共所有；
