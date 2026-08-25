@@ -905,3 +905,4 @@ B、C、D 是被**稱讚**的，問題只在正解段。但零 token 定位器�
 - explanations-redteam-lessons.md §17：重生成會丟掉修復；每一批重生成都要自己再走一次紅隊與修復站（2026-08-18 實測）
 - explanations-redteam-lessons.md §18：補救腳本回報「0 則」時，先分辨是「沒事」還是「沒認出來」（2026-08-18 實測）
 - explanations-redteam-lessons.md §19：操作卡的兩個靜默缺陷（2026-08-23，同一張卡上同時中兩個）
+- explanations-redteam-lessons.md §35：`mkfix.is_defect()` 的 type 關鍵字比對——`type` 是模型自由造詞不是 enum，關鍵字表會過期；但寬鬆補漏比不補更危險，會誤吃「缺陷回報寫入正文」這個可修的近鄰語意群（2026-08-25）
