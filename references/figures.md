@@ -231,6 +231,18 @@ base64 字串塞進對話／終端／工具輸出會觸發 Anthropic AUP 內容�
 - bank.json 維持**純文字**，可被全形／半形標點 lint、可 diff、git 能 delta。
 - 題庫與圖的繫結是「檔名指向」，一張圖被多個題組子題共用時，多筆 `figure` 欄指同一檔名即可。
 
+🔴 **「git 能 delta」不等於「git 能溯源到單一 qid」**（2026-08-25 實測）：bank.json 是
+**單行** minified JSON——任何一次編輯，不管改的是哪個 qid，在 git 眼裡都是「這一整行被
+換掉」。想用 `git log -S'某檔名字串'` 或逐行 `git blame` 反查「是哪個 commit 把這個
+figure 值寫進哪個 qid 的」，兩者都會失靈：`blame` 只能定位到「整行」（＝全檔）；
+`-S` 的 pickaxe 在同一份跑過的實測裡，對三個完全不同的目標字串回傳了一模一樣的
+commit 清單（凡是動過 bank.json 的 commit 全部命中，等於沒有篩選力）。
+**「純文字可 diff」講的是「換行後前後兩份檔案可以整份比對」，不是「可以查到誰在何時
+改了哪一筆」**——後者需要另外的機制（例如落地時另存一份 per-qid 的修改前後快照，
+不能事後指望 git 幫你查）。debug 群組圖繼承一類的「這個值是哪裡寫進來的」問題時，
+先假設 git 這條路走不通，改讀程式碼推導機制，別把時間花在對著同一批 commit
+清單反覆重跑 pickaxe。
+
 學測腳本把 `figure` 欄寫回 `data/bank.json` 正本；會考腳本只動 `data/_stage/cap_{科}.json` staging，不碰正本。
 
 ### 3) build 時才 base64 內嵌進 `window.__FIGS__`
