@@ -191,6 +191,7 @@ if not found:
 - [ ] **內容驗證**：下載驗 `raise_for_status()` ＋ PDF 結構（`%%EOF`／可開頁），不只驗 magic bytes？解析驗題數達預期門檻？
 - [ ] **驗證擋在寫檔前**：所有驗證失敗都在 `json.dump` 之前中止，髒資料不落盤？
 - [ ] **憑證**：用系統 CA／`certifi` 明確指定，沒有偷關 SSL 驗證？診斷時記得 `/usr/bin/curl`（Keychain）與 Python（certifi）是兩個信任庫——curl 通而程式不通也可能是 certifi 缺該 root，先 `pip install -U certifi` 再下判斷？
+- [ ] **回寫前先量原檔的序列化格式**：覆蓋既有 JSON 前，量過原檔的 `indent`／`separators`／`ensure_ascii`／結尾有無換行，並用**同一組參數**寫回？（`json.dump(..., indent=1)` 蓋掉 `indent=2` 或單行壓縮檔，JSON 語意零變化、**review 語意是災難**：實測 13 筆真變動被 **115,393 行**假 diff 埋掉，改回原格式後真實 diff 是 1,024 行。整檔重排還會讓日後 `git log -p`／`git blame` 追不出某欄位何時被誰改的。同一個庫裡不同檔常常格式不同——本專案 `ast/gsat` 的 bank 是 `indent=2`、`cap` 的 bank 與 `ast/cap` 的 explanations 是單行壓縮，憑手感選一個必錯。）
 - [ ] **原子寫入 ＋ 備份**：寫**同目錄**的 `*.tmp` 後 `os.replace`（跨檔系統會 `EXDEV`，故 tmp 要放目標同一目錄）？覆蓋前留帶時間戳 `.bak`？所有 `open` 用 `with`？
 - [ ] **驗證／assert 在落盤前**：唯一性、qid、schema 等檢查排在 `write_text`／`os.replace` **之前**（先在記憶體或 tmp 上驗，通過才覆蓋正式檔）？
 - [ ] **重跑冪等／去重**：合併進主庫的腳本重跑不會重複併入同一批題目（用 `qid` 去重，已存在則 skip 或更新，而非無條件 append）？
