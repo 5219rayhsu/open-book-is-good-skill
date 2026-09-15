@@ -157,6 +157,8 @@ assert all(sha1(rt_payload[qid][f]) == manifest[qid][f] for f in need)  # 陳舊
 **fail-closed**：不過的 qid 進 repair queue（補欄位是確定性操作），乾淨的照發；
 失敗率超過閾值（如 2%）**中止整批**——那是切塊器 bug，不是個案。
 
+→ 凍結審查包也要把審查者可見的整個目錄納入 parity：路徑、同目錄檔案、manifest 欄位形狀，以及控制題與實題的同形要求，見 `explanations-redteam-lessons.md` §38。
+
 ### 2.3a 布林旗標的缺席與 `false` 同形——所以 prompt 的條件式要對上游斷言（2026-08-17 實測）
 
 §2.3 的 parity 斷言比的是**證據欄位的 hash**，前提是「欄位在 manifest 裡登記過」。
