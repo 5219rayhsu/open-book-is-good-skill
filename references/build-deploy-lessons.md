@@ -613,6 +613,8 @@ var src = (window.__FIGS__ && window.__FIGS__[name]) || dataUrl('figures/' + nam
 
 ---
 
+另一實例：`67459e92` 併庫只讀單值 figure_staged 漏掉多圖陣列的兩個資產，導致 6 筆缺檔；改依權威 png_manifest 全量複製並逐檔驗雜湊才歸零。
+
 ## 21. 離線單檔放哪：Workers 靜態資源單檔 25 MiB 是硬牆（2026-08-14）
 
 單檔版隨科目長大（`json + 圖 × 1.37 + 外殼`），12 科實測 4 MB ～ 170 MB。
