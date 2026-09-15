@@ -192,6 +192,8 @@ if not found:
 - [ ] **驗證擋在寫檔前**：所有驗證失敗都在 `json.dump` 之前中止，髒資料不落盤？
 - [ ] **憑證**：用系統 CA／`certifi` 明確指定，沒有偷關 SSL 驗證？診斷時記得 `/usr/bin/curl`（Keychain）與 Python（certifi）是兩個信任庫——curl 通而程式不通也可能是 certifi 缺該 root，先 `pip install -U certifi` 再下判斷？
 - [ ] **回寫前先量原檔的序列化格式**：覆蓋既有 JSON 前，量過原檔的 `indent`／`separators`／`ensure_ascii`／結尾有無換行，並用**同一組參數**寫回？（`json.dump(..., indent=1)` 蓋掉 `indent=2` 或單行壓縮檔，JSON 語意零變化、**review 語意是災難**：實測 13 筆真變動被 **115,393 行**假 diff 埋掉，改回原格式後真實 diff 是 1,024 行。整檔重排還會讓日後 `git log -p`／`git blame` 追不出某欄位何時被誰改的。同一個庫裡不同檔常常格式不同——本專案 `ast/gsat` 的 bank 是 `indent=2`、`cap` 的 bank 與 `ast/cap` 的 explanations 是單行壓縮，憑手感選一個必錯。）
+  補充：工作樹現況可能已違反單行／縮排不變式；格式基準須同時取不變式本身與最後一個已知良好版本，詳例見 `dirty-data-robustness-lessons.md` §十二。
+  另一實例：`b64b4bd2` 此提交即本節序列化案例的來源；當時把格式改回覆寫前的原檔後，115393 行假差異縮為 1024 行。但那份原檔的格式本身可能已經退化，不能直接當成應沿用的格式（見上一行補充）。
 - [ ] **原子寫入 ＋ 備份**：寫**同目錄**的 `*.tmp` 後 `os.replace`（跨檔系統會 `EXDEV`，故 tmp 要放目標同一目錄）？覆蓋前留帶時間戳 `.bak`？所有 `open` 用 `with`？
 - [ ] **驗證／assert 在落盤前**：唯一性、qid、schema 等檢查排在 `write_text`／`os.replace` **之前**（先在記憶體或 tmp 上驗，通過才覆蓋正式檔）？
 - [ ] **重跑冪等／去重**：合併進主庫的腳本重跑不會重複併入同一批題目（用 `qid` 去重，已存在則 skip 或更新，而非無條件 append）？
@@ -200,7 +202,6 @@ if not found:
 - [ ] **schema 驗證**：合併進主庫前，逐筆驗 `qid` 等必要欄位存在且非空（`qid` 為 `None` 會讓多題靜默併成一筆）？
 - [ ] **可追訊號**：所有靜默降級（跨頁截斷、欄位 fallback、比對 miss）都至少 `logging.warning` 留下年份／科目／題號，CI 可 grep？
 - [ ] **選項圈號塌縮**：組合選項題型是否掃過 `within_dup`／`cross_iden`／`marker_residual`（排序題已豁免）？復原走 vision 時是否通過「4 選項互異＋同卷映射一致（或單題卷內部自洽）＋官方答案語意檢查」三道硬門，過不了留 `parse=review` 而非硬猜？
-另一實例：`b64b4bd2` 此提交即本節序列化案例的來源；115393 行假差異在還原原檔格式後縮為 1024 行。
 
 ## 六、全形／半形正規化：NFKC 用來**產生候選集**，不能直接拿來當輸出（2026-08-02）
 

@@ -745,3 +745,9 @@ selftest（`strip_red_watermark.py --selftest`，4 條）逐條否證：浮水�
 **窗會動態放大**：若群貼著搜尋窗（錨點行底 → 下一題題號頂）的邊緣，代表圖可能還沒收
 全，窗上下各退 24px 重找，最多 4 輪，直到高度不再變化。收工前用
 `assert not (r0 < 3 or r1 > len(ink)-4)` 擋住「圖仍貼著窗緣」——硬失敗好過默默出錯圖。
+
+## 教訓索引（已搬至 figures-lessons.md）
+
+- figures-lessons.md §十：碰到物件不代表整個物件都屬於本題（2026-09-10）
+- figures-lessons.md §十一：裁切完整性要量在缺陷尚未被補白掩蓋的影像上（2026-09-10）
+- figures-lessons.md §十二：點陣圖裡的軸標籤不會出現在 PDF 文字層（2026-09-09）
