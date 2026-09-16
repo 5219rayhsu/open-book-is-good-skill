@@ -1520,3 +1520,17 @@ T02 在產物內自報 `gpt-6-astra`／`low`，但派工紀錄與 codex log head
 **判準**：provenance 的正本是派工器紀錄與 CLI 啟動 header；產物內的自報值只能作交叉核對。
 兩者不一致時，以派工紀錄為準，並留下更正紀錄；沒有可回溯的啟動證據，就不能把該模型／effort
 拿來做臂間比較或結案依據。
+
+## 51. 派工前的依賴探針要按「執行時的 sys.path」判斷專案內模組（2026-09-16 實測）
+
+依賴探針 `check_card_deps.py` 的 `static_imports()` 把「專案內模組」定義成**腳本同目錄**的 `*.py`。
+但 `_build_features/goldens/ab8_segfix.py` 執行時自己把 `sys.path` 接到上一層 `_build_features` 與
+`_build_redteam`，再 import `expl_lint`、`premerge_gates`、`build_free`。探針不知道這兩個路徑，就把三個
+專案模組當成「venv 裡缺的第三方套件」，**兩張卡（RC01、RC04）第一次派工被拒**，主控當下還以為是 venv 壞了。
+
+實測：舊版對該腳本回報 `['build_free', 'expl_lint', 'premerge_gates']`；改成「腳本目錄往上到 ROOT，
+再加上路徑 regex 已列的工具目錄」之後回報 `[]`，真實形狀測試卡通過，原有五個 selftest 案例不變。
+
+**判準**：派工前的閘門若要判斷「這個名字是不是專案內的東西」，它的模型必須與**執行時**的解析規則一致
+（腳本自己改過的 `sys.path`、工具目錄的慣例），否則它擋掉的是合法的工作。目錄清單要與同一支檔案裡的
+其他用途共用同一份常數，不要抄第二份；擋下時的訊息也要能分辨「真的缺套件」與「探針看不到這個路徑」。
